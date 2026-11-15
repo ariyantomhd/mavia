@@ -19,10 +19,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
-      <body>
+    <html lang="id" suppressHydrationWarning>
+      <body className="flex flex-col min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-indigo-500 selection:text-white">
         <QueryProvider>
-          {/* Auth Handler */}
+          {/* Global Auth Handler untuk menangkap token OAuth / Supabase redirect */}
           <AuthHandler />
 
           {/* Global Auth Modal */}
@@ -34,8 +34,8 @@ export default function RootLayout({
           {/* Global Navbar */}
           <Navbar />
 
-          {/* Main Content - Background dikelola terpusat via globals.css */}
-          <main className="flex-1 min-h-screen">
+          {/* Main Content */}
+          <main className="flex-1">
             {children}
           </main>
 
