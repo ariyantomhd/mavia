@@ -8,6 +8,11 @@ interface SocialAuthButtonsProps {
   label?: string;
 }
 
+const getApiBaseUrl = (): string => {
+  const rawUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://api.themavia.com/api').replace(/\/$/, '');
+  return rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
+};
+
 export default function SocialAuthButtons({
   label = 'Or continue with',
 }: SocialAuthButtonsProps) {
@@ -16,10 +21,11 @@ export default function SocialAuthButtons({
   const handleSocialLogin = async (provider: 'google' | 'twitter') => {
     try {
       setLoadingProvider(provider);
-      const response = await fetch(`http://localhost:5000/api/auth/${provider}`);
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/auth/${provider}`);
       const textResponse = await response.text();
-      let result;
-      
+      let result: { url?: string; message?: string };
+
       try {
         result = JSON.parse(textResponse);
       } catch {
@@ -79,7 +85,7 @@ export default function SocialAuthButtons({
           className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
         >
           <svg className="w-4 h-4 fill-current text-white" viewBox="0 0 24 24">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
           </svg>
           <span>{loadingProvider === 'twitter' ? 'Connecting...' : 'X'}</span>
         </button>
