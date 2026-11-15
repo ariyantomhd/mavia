@@ -29,7 +29,7 @@ function isOnProtectedRoute(): boolean {
 class ApiWrapper {
   private client: AxiosInstance;
 
-  constructor(baseURL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api') {
+  constructor(baseURL: string = process.env.NEXT_PUBLIC_API_URL || 'https://api.themavia.com/api') {
     this.client = axios.create({
       baseURL,
       timeout: 40000,
