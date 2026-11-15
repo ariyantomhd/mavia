@@ -5,54 +5,38 @@ import { useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { apiAuth } from '@/services/apiAuth';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { User as UserType } from '@/types';
 
 function AuthHandlerContent() {
   const router = useRouter();
   const loginStore = useAppStore((state) => state.login);
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       if (typeof window === 'undefined') return;
 
-      let accessToken: string | null = null;
-      let refreshToken: string | null = null;
+      const searchParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
 
-      // 1. Prioritas Utama: Ambil sesi langsung dari Supabase Client (Menangkap token OAuth redirect)
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session && session.access_token) {
-        accessToken = session.access_token;
-        refreshToken = session.refresh_token;
-      } else {
-        // 2. Fallback: Tangkap dari URL Hash (#access_token=...) standar Supabase
-        const hash = window.location.hash;
-        const search = window.location.search;
+      let accessToken = searchParams.get('access_token');
+      let refreshToken = searchParams.get('refresh_token');
 
-        if (hash && hash.includes('access_token')) {
-          const params = new URLSearchParams(hash.replace('#', '?'));
-          accessToken = params.get('access_token');
-          refreshToken = params.get('refresh_token');
-        } 
-        // 3. Fallback terakhir: Tangkap dari Query Params (?access_token=...) jika ada
-        else if (search && search.includes('access_token')) {
-          const params = new URLSearchParams(search);
-          accessToken = params.get('access_token');
-          refreshToken = params.get('refresh_token');
-        }
+      // Fallback jika token dikirim via Hash oleh backend/provider
+      if (!accessToken && hash && hash.includes('access_token')) {
+        const hashParams = new URLSearchParams(hash.replace('#', '?'));
+        accessToken = hashParams.get('access_token');
+        refreshToken = hashParams.get('refresh_token');
       }
 
       if (accessToken) {
-        // Gunakan key 'token' agar sinkron dengan useAppStore.ts & local storage app
+        // Simpan token ke localStorage aplikasi
         localStorage.setItem('token', accessToken);
         if (refreshToken) {
           localStorage.setItem('refresh_token', refreshToken);
         }
 
         try {
-          // Ambil profil user terbaru dari backend
+          // Ambil profil user terbaru dari backend Express Anda
           const response = await apiAuth.getMe(); 
           const responseData = response as unknown as { data?: UserType };
           const userData = responseData?.data || (response as unknown as UserType);
@@ -70,13 +54,13 @@ function AuthHandlerContent() {
             );
           }
 
-          // Bersihkan URL dari sampah parameter token, lalu refresh halaman
+          // Bersihkan URL dari parameter token agar bersih, lalu refresh
           window.history.replaceState({}, document.title, window.location.pathname);
           router.replace('/');
           router.refresh();
         } catch (err) {
           console.error("Gagal mengambil profil user setelah auth callback:", err);
-          // Fallback jika fetch gagal tapi token valid, simpan minimal data session
+          // Fallback minimal session jika fetch profil gagal
           loginStore(
             {
               id: 'temp-id',
@@ -93,7 +77,7 @@ function AuthHandlerContent() {
     };
 
     handleAuthCallback();
-  }, [router, loginStore, supabase]);
+  }, [router, loginStore]);
 
   return null;
 }
