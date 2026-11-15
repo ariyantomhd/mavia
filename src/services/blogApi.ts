@@ -1,24 +1,43 @@
-// src/services/blogApi.ts
-import { fetchApi } from './apiConfig';
-import { Article, Category, CreateCommentDTO, ApiResponse } from '@/types';
+// src/services/BlogAPI.ts
+import apiClient, { normalizeApiError } from './apiClient';
 
-export const blogApi = {
-  async getArticles(params?: { category?: string; search?: string }): Promise<ApiResponse<Article[]>> {
-    return fetchApi<ApiResponse<Article[]>>('/blog/articles', { params });
-  },
+export interface MarketArticle {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  content: string[];
+  category?: string;
+  author?: string;
+  image_url?: string | null;
+  is_featured?: boolean;
+  status: string;
+  published_at?: string | null;
+  created_at: string;
+}
 
-  async getArticleBySlug(slug: string): Promise<ApiResponse<Article>> {
-    return fetchApi<ApiResponse<Article>>(`/blog/articles/slug/${slug}`);
-  },
+export async function getMarketArticles(): Promise<MarketArticle[]> {
+  try {
+    const { data } = await apiClient.get<{ success: boolean; data: MarketArticle[] }>(
+      '/admin/blog',
+      { params: { status: 'PUBLISHED' } }
+    );
+    return Array.isArray(data?.data) ? data.data : [];
+  } catch (error) {
+    throw normalizeApiError(error);
+  }
+}
 
-  async getCategories(): Promise<ApiResponse<Category[]>> {
-    return fetchApi<ApiResponse<Category[]>>('/blog/categories');
-  },
-
-  async addComment(articleId: number | string, payload: CreateCommentDTO): Promise<ApiResponse<unknown>> {
-    return fetchApi<ApiResponse<unknown>>(`/blog/articles/${articleId}/comments`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-  },
-};
+export async function getMarketArticleBySlug(slug: string): Promise<MarketArticle | null> {
+  try {
+    const { data } = await apiClient.get<{ success: boolean; data: MarketArticle[] }>(
+      '/admin/blog',
+      { params: { search: slug } }
+    );
+    const list = Array.isArray(data?.data) ? data.data : [];
+    const found = list.find((a) => a.slug === slug);
+    return found || null;
+  } catch (error) {
+    throw normalizeApiError(error);
+  }
+}
