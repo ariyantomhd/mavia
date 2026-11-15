@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
       },
     },
   },
-  // Header CSP dengan izin komunikasi ke backend production (api.themavia.com), lokal, Supabase, PayPal, Google Fonts, dan Google Analytics/Ads/Conversion
+  // Header CSP dengan izin komunikasi ke backend production, lokal, Supabase, PayPal, Google, dan Cloudflare Insights
   async headers() {
     return [
       {
@@ -56,8 +56,8 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self' https://api.themavia.com https://*.themavia.com http://localhost:5000 https://*.supabase.co https://*.paypal.com https://*.paypalobjects.com;",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000 https://*.paypal.com https://*.paypalobjects.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google.com https://*.google.co.id;",
-              "connect-src 'self' https://api.themavia.com https://*.themavia.com wss://api.themavia.com http://localhost:5000 ws://localhost:5000 https://*.supabase.co https://*.paypal.com https://*.paypalobjects.com https://*.paypalinc.com https://stats.g.doubleclick.net https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.google.co.id https://*.googleadservices.com https://adservice.google.com;",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000 https://*.paypal.com https://*.paypalobjects.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google.com https://*.google.co.id https://static.cloudflareinsights.com;",
+              "connect-src 'self' https://api.themavia.com https://*.themavia.com wss://api.themavia.com http://localhost:5000 ws://localhost:5000 https://*.supabase.co https://*.paypal.com https://*.paypalobjects.com https://*.paypalinc.com https://stats.g.doubleclick.net https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.google.co.id https://*.googleadservices.com https://adservice.google.com https://cloudflareinsights.com;",
               "frame-src 'self' https://*.paypal.com https://*.sandbox.paypal.com;",
               "img-src 'self' data: blob: https: http:;",
               "style-src 'self' 'unsafe-inline' https://*.paypal.com https://fonts.googleapis.com;",
