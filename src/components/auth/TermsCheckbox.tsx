@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { Check } from 'lucide-react';
 
 interface TermsCheckboxProps {
@@ -11,30 +12,45 @@ interface TermsCheckboxProps {
 
 export default function TermsCheckbox({ checked, onChange }: TermsCheckboxProps) {
   return (
-    <div className="flex items-start gap-2.5 mt-2">
-      <label className="group relative flex items-center justify-center cursor-pointer mt-0.5 select-none">
+    <label className="group flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-slate-300 select-none">
+      <div className="relative flex items-center justify-center shrink-0">
         <input
           type="checkbox"
           className="peer sr-only"
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
         />
-        <div className="w-4 h-4 border border-slate-300 rounded bg-white peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-all flex items-center justify-center shadow-sm">
+        <div className="flex h-4 w-4 items-center justify-center rounded border border-slate-300 bg-white shadow-2xs transition-all peer-checked:border-indigo-600 peer-checked:bg-indigo-600">
           <Check
-            className={`w-3 h-3 text-white transition-opacity duration-150 ${
-              checked ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+            className={`h-3 w-3 text-white transition-all duration-150 ${
+              checked ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
             }`}
             strokeWidth={3}
           />
         </div>
-      </label>
+      </div>
 
-      <p className="text-xs font-semibold text-slate-600 leading-tight">
-        By signing up, I agree to the{' '}
-        <a href="#" className="text-indigo-600 hover:underline">Terms of Service</a>{' '}
+      <span className="text-xs leading-relaxed text-slate-600">
+        I have read and agree to the{' '}
+        <Link
+          href="/terms"
+          target="_blank"
+          onClick={(e) => e.stopPropagation()}
+          className="font-bold text-slate-900 hover:text-indigo-600 hover:underline"
+        >
+          Terms of Service
+        </Link>{' '}
         and{' '}
-        <a href="#" className="text-indigo-600 hover:underline">Privacy Policy</a>.
-      </p>
-    </div>
+        <Link
+          href="/privacy"
+          target="_blank"
+          onClick={(e) => e.stopPropagation()}
+          className="font-bold text-slate-900 hover:text-indigo-600 hover:underline"
+        >
+          Privacy Policy
+        </Link>
+        .
+      </span>
+    </label>
   );
 }

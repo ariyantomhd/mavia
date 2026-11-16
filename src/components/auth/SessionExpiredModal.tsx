@@ -29,13 +29,7 @@ export default function SessionExpiredModal() {
   const handleSignInAgain = () => {
     logout();
     setSessionExpired(false);
-    router.replace('/');
-
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('open-auth-modal', { detail: { mode: 'signin' } })
-      );
-    }
+    router.replace('/login');
   };
 
   const handleContinueAsGuest = () => {

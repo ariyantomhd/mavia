@@ -29,7 +29,7 @@ function isOnProtectedRoute(): boolean {
 class ApiWrapper {
   private client: AxiosInstance;
 
-  constructor(baseURL: string = process.env.NEXT_PUBLIC_API_URL || 'https://api.themavia.com/api') {
+  constructor(baseURL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api') {
     this.client = axios.create({
       baseURL,
       timeout: 40000,
@@ -38,7 +38,7 @@ class ApiWrapper {
       },
     });
 
-    // 1. Request Interceptor: Automatically attach Bearer token to headers if available in localStorage
+    // 1. Request Interceptor: Otomatis menyematkan Bearer token dari localStorage jika ada
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         if (typeof window !== 'undefined') {
@@ -52,7 +52,7 @@ class ApiWrapper {
       (error: AxiosError) => Promise.reject(error)
     );
 
-    // 2. Response Interceptor: Handle response data and global error responses
+    // 2. Response Interceptor: Menangani data respons dan standarisasi error global agar tidak kosong {}
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response.data,
       (error: AxiosError) => {
@@ -62,6 +62,7 @@ class ApiWrapper {
 
           if (typeof window !== 'undefined') {
             localStorage.removeItem('token');
+            localStorage.removeItem('refresh_token');
           }
 
           const requestUrl = error.config?.url || '';
@@ -70,17 +71,37 @@ class ApiWrapper {
             requestUrl.includes('/auth/register') ||
             requestUrl.includes('/auth/me');
 
-          // Hanya tampilkan modal Session Expired jika sebelumnya memang ada sesi aktif
-          // dan user sedang berada di rute terproteksi (bukan saat pertama buka halaman publik)
+          // Tampilkan modal Session Expired jika sebelumnya ada sesi aktif dan berada di rute terproteksi
           if (hadToken && !isAuthEndpoint && isOnProtectedRoute()) {
             useAppStore.getState().setSessionExpired(true);
           }
         }
 
-        const errorResponse = error.response?.data || { 
-          message: error.message || 'Server error occurred' 
+        const responseData: unknown = error.response?.data;
+        const responseBody =
+          typeof responseData === 'object' && responseData !== null
+            ? (responseData as { message?: unknown; error?: unknown; data?: unknown })
+            : null;
+        let errorMessage = 'Server error occurred';
+
+        if (typeof responseData === 'string') {
+          errorMessage = responseData;
+        } else if (typeof responseBody?.message === 'string') {
+          errorMessage = responseBody.message;
+        } else if (typeof responseBody?.error === 'string') {
+          errorMessage = responseBody.error;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        const errorResponse = {
+          success: false,
+          message: errorMessage,
+          status: error.response?.status || 500,
+          data: responseBody?.data || null,
         };
-        console.error('[API Error]:', errorResponse);
+
+        console.error('[API Error Detail]:', errorResponse);
         return Promise.reject(errorResponse);
       }
     );

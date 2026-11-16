@@ -16,6 +16,26 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'hub.themavia.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pbs.twimg.com', // Avatar X (Twitter)
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com', // Avatar Google
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.discordapp.com', // Avatar Discord
+      },
+      {
+        protocol: 'https',
+        hostname: 'platform-lookaside.fbsbx.com', // Avatar Facebook
+      },
+      {
+        protocol: 'https',
         hostname: 'cdn-icons-png.flaticon.com',
       },
       {
@@ -55,9 +75,9 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value: [
-              "default-src 'self' https://api.themavia.com https://*.themavia.com http://localhost:5000 https://*.supabase.co https://*.paypal.com https://*.paypalobjects.com;",
+              "default-src 'self' https://api.themavia.com https://hub.themavia.com https://*.themavia.com http://localhost:5000 https://*.supabase.co https://*.paypal.com https://*.paypalobjects.com;",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5000 https://*.paypal.com https://*.paypalobjects.com https://www.googletagmanager.com https://www.google-analytics.com https://*.google.com https://*.google.co.id https://static.cloudflareinsights.com;",
-              "connect-src 'self' https://api.themavia.com https://*.themavia.com wss://api.themavia.com http://localhost:5000 ws://localhost:5000 https://*.supabase.co https://*.paypal.com https://*.paypalobjects.com https://*.paypalinc.com https://stats.g.doubleclick.net https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.google.co.id https://*.googleadservices.com https://adservice.google.com https://cloudflareinsights.com;",
+              "connect-src 'self' https://api.themavia.com https://hub.themavia.com https://*.themavia.com wss://api.themavia.com http://localhost:5000 ws://localhost:5000 https://*.supabase.co https://*.paypal.com https://*.paypalobjects.com https://*.paypalinc.com https://stats.g.doubleclick.net https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.google.com https://*.google.co.id https://*.googleadservices.com https://adservice.google.com https://cloudflareinsights.com;",
               "frame-src 'self' https://*.paypal.com https://*.sandbox.paypal.com;",
               "img-src 'self' data: blob: https: http:;",
               "style-src 'self' 'unsafe-inline' https://*.paypal.com https://fonts.googleapis.com;",

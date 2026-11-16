@@ -4,7 +4,21 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, LayoutDashboard, LogOut, ChevronDown, Box, FileText, Smartphone, LayoutGrid, Code2, Flame, Award, Sparkles, Zap } from 'lucide-react';
+import {
+  Search,
+  LayoutDashboard,
+  LogOut,
+  ChevronDown,
+  Box,
+  FileText,
+  Smartphone,
+  LayoutGrid,
+  Code2,
+  Flame,
+  Award,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -12,7 +26,7 @@ interface MobileMenuProps {
   isLoggedIn: boolean;
   onClose: () => void;
   logout: () => void;
-  openAuthModal: (tab: 'login' | 'signup') => void;
+  openAuthModal?: (tab: 'login' | 'signup') => void;
 }
 
 export default function MobileMenu({
@@ -21,7 +35,6 @@ export default function MobileMenu({
   isLoggedIn,
   onClose,
   logout,
-  openAuthModal,
 }: MobileMenuProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [browseOpen, setBrowseOpen] = useState(false);
@@ -52,7 +65,6 @@ export default function MobileMenu({
       </form>
 
       <nav className="flex flex-col gap-1 font-medium text-slate-300 text-sm">
-        
         {/* Dropdown Browse Terintegrasi di Mobile */}
         <div>
           <button
@@ -61,7 +73,9 @@ export default function MobileMenu({
             className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-800/60 text-left cursor-pointer"
           >
             <span>Browse</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${browseOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${browseOpen ? 'rotate-180' : ''}`}
+            />
           </button>
 
           {browseOpen && (
@@ -101,7 +115,7 @@ export default function MobileMenu({
             </div>
           )}
         </div>
-        
+
         {/* Dropdown Kategori Terintegrasi di Mobile */}
         <div>
           <button
@@ -110,7 +124,9 @@ export default function MobileMenu({
             className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-800/60 text-left cursor-pointer"
           >
             <span>Categories</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${categoriesOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${categoriesOpen ? 'rotate-180' : ''}`}
+            />
           </button>
 
           {categoriesOpen && (
@@ -121,7 +137,7 @@ export default function MobileMenu({
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400"
               >
                 <Box className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span>DApps & Web3</span>
+                <span>DApps &amp; Web3</span>
               </Link>
               <Link
                 href="/products?category=blog-cms"
@@ -129,7 +145,7 @@ export default function MobileMenu({
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400"
               >
                 <FileText className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>Blog & CMS</span>
+                <span>Blog &amp; CMS</span>
               </Link>
               <Link
                 href="/products?category=android-apps"
@@ -159,16 +175,32 @@ export default function MobileMenu({
           )}
         </div>
 
-        <Link href="/products" onClick={onClose} className="px-3 py-2.5 rounded-lg hover:bg-slate-800/60">
+        <Link
+          href="/products"
+          onClick={onClose}
+          className="px-3 py-2.5 rounded-lg hover:bg-slate-800/60"
+        >
           All Products
         </Link>
-        <Link href="/deals" onClick={onClose} className="px-3 py-2.5 rounded-lg hover:bg-slate-800/60">
+        <Link
+          href="/deals"
+          onClick={onClose}
+          className="px-3 py-2.5 rounded-lg hover:bg-slate-800/60"
+        >
           Deals
         </Link>
-        <Link href="/blog" onClick={onClose} className="px-3 py-2.5 rounded-lg hover:bg-slate-800/60">
+        <Link
+          href="/blog"
+          onClick={onClose}
+          className="px-3 py-2.5 rounded-lg hover:bg-slate-800/60"
+        >
           Blog
         </Link>
-        <Link href="/affiliate" onClick={onClose} className="px-3 py-2.5 rounded-lg hover:bg-slate-800/60">
+        <Link
+          href="/affiliate"
+          onClick={onClose}
+          className="px-3 py-2.5 rounded-lg hover:bg-slate-800/60"
+        >
           Become Affiliate
         </Link>
       </nav>
@@ -200,20 +232,20 @@ export default function MobileMenu({
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => openAuthModal('login')}
-              className="w-full text-center py-2.5 text-sm font-semibold text-slate-200 bg-transparent hover:bg-slate-800/60 border border-slate-700/80 rounded-xl transition-all cursor-pointer"
+            <Link
+              href="/login"
+              onClick={onClose}
+              className="w-full text-center py-2.5 text-sm font-semibold text-slate-200 bg-transparent hover:bg-slate-800/60 border border-slate-700/80 rounded-xl transition-all"
             >
               Login
-            </button>
-            <button
-              type="button"
-              onClick={() => openAuthModal('signup')}
-              className="w-full text-center py-2.5 text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 rounded-xl shadow-lg shadow-indigo-600/25 cursor-pointer"
+            </Link>
+            <Link
+              href="/signup"
+              onClick={onClose}
+              className="w-full text-center py-2.5 text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 rounded-xl shadow-lg shadow-indigo-600/25"
             >
               Sign Up
-            </button>
+            </Link>
           </div>
         )}
       </div>

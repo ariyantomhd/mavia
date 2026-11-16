@@ -2,37 +2,44 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { X } from 'lucide-react';
+import { X, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
-import { apiAuth } from '@/services/apiAuth';
-import SignInTabs from '@/components/auth/SignInTabs';
-import RegisterTabs from '@/components/auth/RegisterTabs';
-import type { LoginPayload, RegisterPayload } from '@/types';
+import TermsCheckbox from '@/components/auth/TermsCheckbox';
+import SocialAuthButtons from '@/components/auth/SocialAuthButtons';
 
 interface AuthModalProps {
   isOpen?: boolean;
   onClose?: () => void;
-  defaultTab?: 'login' | 'signup';
+  defaultTab?: 'login' | 'signup' | 'signin';
 }
 
-export default function AuthModal({ 
-  isOpen: externalIsOpen, 
-  onClose: externalOnClose, 
-  defaultTab = 'login' 
+export default function AuthModal({
+  isOpen: externalIsOpen,
+  onClose: externalOnClose,
+  defaultTab = 'signin',
 }: AuthModalProps) {
-  const [internalIsOpen, setInternalIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
-  
-  // Global state & router
-  const loginStore = useAppStore((state) => state.login);
   const router = useRouter();
+  const currentUser = useAppStore((state) => state.currentUser);
+
+  const normalizeMode = (tab?: string): 'signin' | 'signup' =>
+    tab === 'signup' ? 'signup' : 'signin';
+
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const [mode, setMode] = useState<'signin' | 'signup'>(() =>
+    normalizeMode(defaultTab),
+  );
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const isControlled = externalIsOpen !== undefined;
   const isOpen = isControlled ? externalIsOpen : internalIsOpen;
 
+  const isSignUp = mode === 'signup';
+  // Pada mode signin, tombol sosial langsung aktif tanpa perlu centang checkbox
+  const isSocialDisabled = isSignUp ? !agreedToTerms : false;
+
   const handleClose = () => {
+    setAgreedToTerms(false);
     if (externalOnClose) {
       externalOnClose();
     }
@@ -41,11 +48,9 @@ export default function AuthModal({
 
   useEffect(() => {
     const handleOpenModal = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      if (customEvent.detail?.mode) {
-        const tab = customEvent.detail.mode === 'signin' ? 'login' : 'signup';
-        setActiveTab(tab);
-      }
+      const customEvent = event as CustomEvent<{ mode?: string }>;
+      setMode(normalizeMode(customEvent.detail?.mode));
+      setAgreedToTerms(false);
       setInternalIsOpen(true);
     };
 
@@ -55,134 +60,136 @@ export default function AuthModal({
     };
   }, []);
 
-  // Parent Function: Handle Login API & Token Storage
-  const handleParentLogin = async (payload: LoginPayload) => {
-    const response = await apiAuth.login(payload);
-    
-    const resRecord = response as unknown as Record<string, unknown>;
-    const resData = (resRecord?.data as Record<string, unknown>) || resRecord;
-    const userData = (resData?.user as Record<string, unknown>) || resData;
-    const sessionObj = resData?.session as Record<string, unknown> | undefined;
-
-    const accessToken =
-      (sessionObj?.access_token as string) ||
-      (resData?.access_token as string) ||
-      (resData?.token as string) ||
-      (resRecord?.token as string) ||
-      (resRecord?.access_token as string);
-
-    const userId = (userData?.id as string) || (userData?._id as string) || '';
-    const userEmail = (userData?.email as string) || payload.email;
-    const username = (userData?.username as string) || (userData?.full_name as string) || payload.email.split('@')[0];
-    const avatarUrl = (userData?.avatar_url as string | null) || null;
-    const role = (userData?.role as string) || 'BUYER';
-
-    if (accessToken && typeof window !== 'undefined') {
-      localStorage.setItem('token', accessToken);
-    }
-
-    loginStore({
-      id: userId,
-      username,
-      email: userEmail,
-      avatar_url: avatarUrl,
-      role,
-    }, accessToken || '');
-
-    handleClose();
-    router.push('/');
-    router.refresh();
-  };
-
-  // Parent Function: Handle Register API
-  const handleParentRegister = async (payload: RegisterPayload) => {
-    // Proses registrasi, lempar ke halaman /verify
-    await apiAuth.register(payload);
-    handleClose();
-    router.push('/verify');
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="absolute inset-0" onClick={handleClose} />
 
-      <div className="relative z-10 w-full max-w-md bg-white border border-slate-200 shadow-2xl shadow-indigo-500/15 rounded-3xl p-8 sm:p-10 transition-all duration-500 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+      <div className="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 sm:p-7 shadow-2xl shadow-indigo-500/15 animate-in zoom-in-95 duration-200">
         <button
           type="button"
           onClick={handleClose}
-          className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+          aria-label="Close modal"
+          className="absolute top-4 right-4 rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
         >
-          <X className="w-5 h-5" />
+          <X className="h-4 w-4" />
         </button>
 
-        <div className="text-center mb-6">
-          <div className="inline-block group mb-2">
-            <div className="relative w-12 h-12 mx-auto overflow-hidden flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-              <Image src="/logo.png" alt="Themavia Logo" fill className="object-contain drop-shadow-sm" priority />
-            </div>
-            <h1 className="text-xl font-black bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              Themavia
-            </h1>
-          </div>
-          
-          <div className="flex bg-slate-100 p-1 rounded-2xl mt-4">
-            <button
-              type="button"
-              onClick={() => setActiveTab('login')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                activeTab === 'login' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('signup')}
-              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                activeTab === 'signup' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              Sign Up
-            </button>
-          </div>
+        {/* Ikon Shield di Tengah Atas */}
+        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+          <ShieldCheck className="h-6 w-6" />
         </div>
 
-        {activeTab === 'login' ? (
-          <div>
-            {/* Pass parent login handler to SignInTabs */}
-            <SignInTabs onSubmitAction={handleParentLogin} onSuccess={handleClose} />
-            <div className="text-center mt-6 pt-4 border-t border-slate-100">
-              <p className="text-xs text-slate-500 font-medium">
-                Don&apos;t have an account?{' '}
-                <button 
-                  type="button"
-                  onClick={() => setActiveTab('signup')}
-                  className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors underline decoration-indigo-500/40 underline-offset-4 cursor-pointer"
-                >
-                  Sign up now
-                </button>
+        {/* Jika user sudah login */}
+        {currentUser ? (
+          <div className="mt-4 text-center space-y-4">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">
+                Already Signed In
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                You are already signed in as{' '}
+                <strong className="text-slate-900">
+                  {currentUser.email || currentUser.username}
+                </strong>
+                .
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                handleClose();
+                router.push('/dashboard');
+              }}
+              className="w-full cursor-pointer rounded-xl bg-slate-900 py-3 px-4 text-xs font-bold text-white transition-colors hover:bg-slate-800"
+            >
+              Go to User Dashboard
+            </button>
           </div>
         ) : (
-          <div>
-            {/* Pass parent register handler to RegisterTabs */}
-            <RegisterTabs onSubmitAction={handleParentRegister} onSuccess={handleClose} />
-            <div className="text-center mt-6 pt-4 border-t border-slate-100">
-              <p className="text-xs text-slate-500 font-medium">
-                Already have an account?{' '}
-                <button 
-                  type="button"
-                  onClick={() => setActiveTab('login')}
-                  className="font-bold text-indigo-600 hover:text-indigo-500 transition-colors underline decoration-indigo-500/40 underline-offset-4 cursor-pointer"
-                >
-                  Sign in
-                </button>
+          <>
+            <div className="mt-3 text-center">
+              <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                {isSignUp ? 'Create Your Account' : 'Sign in to Themavia'}
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                {isSignUp
+                  ? 'Please review and accept our terms before signing up'
+                  : 'Choose your connected social account to continue'}
               </p>
             </div>
-          </div>
+
+            {/* Kotak Scroll Terms & Checkbox (Hanya tampil pada mode Sign Up) */}
+            {isSignUp && (
+              <>
+                <div className="mt-4 max-h-40 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-left text-xs text-slate-600">
+                  <h3 className="font-bold text-slate-900">Terms of Service</h3>
+                  <p className="mt-0.5 text-[11px] text-slate-400">
+                    Last Updated: November 16, 2026
+                  </p>
+                  <p className="mt-2.5 leading-relaxed">
+                    Welcome to <strong className="text-slate-900">Themavia</strong>.
+                    By accessing or using our services, you agree to be bound by the
+                    following terms:
+                  </p>
+                  <ol className="mt-2 list-decimal space-y-2 pl-4 leading-relaxed">
+                    <li>
+                      <strong className="text-slate-900">Use of Service:</strong> Use
+                      this service only for lawful purposes and in compliance with
+                      applicable laws.
+                    </li>
+                    <li>
+                      <strong className="text-slate-900">User Accounts:</strong> You
+                      are responsible for safeguarding your connected social account
+                      credentials and all activities under your account.
+                    </li>
+                    <li>
+                      <strong className="text-slate-900">Digital Licenses:</strong>{' '}
+                      Purchased templates, APIs, and source codes are granted under
+                      verified commercial licenses and may not be redistributed as
+                      competing assets.
+                    </li>
+                    <li>
+                      <strong className="text-slate-900">Refund Policy:</strong> Due
+                      to the instant downloadable nature of digital source code,
+                      completed orders are non-refundable once files or license keys
+                      are accessed.
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="mt-4">
+                  <TermsCheckbox
+                    checked={agreedToTerms}
+                    onChange={setAgreedToTerms}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Status Bar + Grid 2x2 Tombol Sosial */}
+            <div className="mt-5">
+              <div className="mb-2.5 flex items-center justify-between">
+                <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                  Continue With
+                </span>
+                {isSignUp && (
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold transition-colors ${
+                      agreedToTerms
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {agreedToTerms ? 'Unlocked • Ready' : 'Locked • Check box above'}
+                  </span>
+                )}
+              </div>
+
+              <SocialAuthButtons disabled={isSocialDisabled} mode={mode} />
+            </div>
+          </>
         )}
       </div>
     </div>
