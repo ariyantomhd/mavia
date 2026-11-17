@@ -1,24 +1,19 @@
 // src/services/blogApi.ts
 import { api } from './wrapperAPI';
-import {
-  BLOG_ARTICLES,
-  BLOG_CATEGORIES,
-  type BlogArticle,
-} from '@/types/blog';
-import {
-  ARTICLES_DB,
-  SLUG_ALIASES,
-  type ArticleDetail,
-} from '@/types/blog-id';
+import { BLOG_CATEGORIES, type BlogArticle } from '@/types/blog';
+import { type ArticleDetail } from '@/types/blog-id';
 
 export interface BackendCategory {
   id?: number | string;
   name: string;
   slug?: string;
+  badge_color?: string;
 }
 
 export interface BackendComment {
   id?: number | string;
+  article_id?: number | string;
+  user_id?: string | null;
   author_name?: string;
   content: string;
   created_at?: string;
@@ -34,8 +29,10 @@ export interface MarketArticle {
   title: string;
   slug: string;
   excerpt?: string;
-  content?: string;
+  content?: string | null;
   status?: string;
+  category_id?: number | string | null;
+  badge_color?: string | null;
   cover_image?: string;
   thumbnail?: string;
   image?: string;
@@ -47,6 +44,11 @@ export interface MarketArticle {
   author_name?: string;
   author_avatar?: string;
   author_role?: string;
+  lead_location?: string;
+  paragraphs?: string[];
+  subheading?: string;
+  sub_paragraph?: string;
+  bullet_points?: string[];
   category_name?: string;
   category?: BackendCategory | string;
   created_at?: string;
@@ -67,7 +69,7 @@ interface ApiSingleResponse<T> {
 const DEFAULT_IMAGE =
   'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000&auto=format&fit=crop';
 const DEFAULT_AVATAR =
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop';
+  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=1000&auto=format&fit=crop';
 
 const CATEGORY_BADGES: Record<string, string> = {
   'SaaS Architecture': 'bg-rose-600 text-white',
@@ -96,7 +98,7 @@ function resolveCategoryName(raw: MarketArticle): string {
   return 'SaaS Architecture';
 }
 
-function estimateReadTime(content?: string, explicitReadTime?: string): string {
+function estimateReadTime(content?: string | null, explicitReadTime?: string): string {
   if (explicitReadTime) return explicitReadTime;
   if (!content) return '5 min read';
   const words = content.replace(/<[^>]+>/g, '').trim().split(/\s+/).length;
@@ -116,12 +118,13 @@ export function mapToBlogArticle(raw: MarketArticle): BlogArticle {
       raw.excerpt ||
       (raw.content ? `${raw.content.replace(/<[^>]+>/g, '').slice(0, 150)}...` : ''),
     category: categoryName,
-    badgeColor: CATEGORY_BADGES[categoryName] || 'bg-slate-900 text-white',
+    badgeColor:
+      raw.badge_color || CATEGORY_BADGES[categoryName] || 'bg-slate-900 text-white',
     tag: raw.tag || 'New',
     image: raw.cover_image || raw.thumbnail || raw.image || DEFAULT_IMAGE,
     date: formatDate(raw.published_at || raw.created_at),
     readTime: estimateReadTime(raw.content, raw.read_time),
-    views: viewsNum > 0 ? `${viewsNum.toLocaleString()} views` : '1.2k views',
+    views: viewsNum > 0 ? `${viewsNum.toLocaleString()} views` : '0 views',
     author: {
       name: raw.author_name || 'Muhammad Ariyanto',
       avatar: raw.author_avatar || DEFAULT_AVATAR,
@@ -141,6 +144,21 @@ export function mapToArticleDetail(raw: MarketArticle): ArticleDetail {
     .map((p: string) => p.trim())
     .filter(Boolean);
 
+  const dbParagraphs: string[] = Array.isArray(raw.paragraphs)
+    ? raw.paragraphs.map((p) => String(p).trim()).filter(Boolean)
+    : [];
+
+  const paragraphs =
+    dbParagraphs.length > 0
+      ? dbParagraphs
+      : rawParagraphs.length > 0
+        ? rawParagraphs
+        : [raw.excerpt || ''];
+
+  const dbBulletPoints: string[] = Array.isArray(raw.bullet_points)
+    ? raw.bullet_points.map((b) => String(b).trim()).filter(Boolean)
+    : [];
+
   return {
     id: String(raw.id),
     slug: raw.slug || String(raw.id),
@@ -154,23 +172,15 @@ export function mapToArticleDetail(raw: MarketArticle): ArticleDetail {
       avatar: raw.author_avatar || DEFAULT_AVATAR,
       role: raw.author_role || 'Lead Architect',
     },
-    leadLocation: `${categoryName} —`,
-    paragraphs:
-      rawParagraphs.length > 0
-        ? rawParagraphs
-        : [raw.excerpt || 'Full engineering breakdown and implementation notes.'],
-    subheading: 'Key Architecture & Implementation Notes',
+    leadLocation: raw.lead_location || `${categoryName} —`,
+    paragraphs,
+    subheading: raw.subheading || 'Key Architecture & Implementation Notes',
     subParagraph:
-      rawParagraphs.length > 1
-        ? rawParagraphs[rawParagraphs.length - 1]
-        : 'Designed for modern production workflows with modular components and clean API boundaries.',
-    bulletPoints: [
-      'Clean separation between API transport layer and UI presentation models',
-      'Consistent caching and fallback handling for uninterrupted reader experience',
-      'Production-ready TypeScript contracts across list, detail, and comment endpoints',
-    ],
-    likes: typeof raw.likes_count === 'number' ? raw.likes_count : 24,
-    shares: typeof raw.shares_count === 'number' ? raw.shares_count : 8,
+      raw.sub_paragraph ||
+      (paragraphs.length > 1 ? paragraphs[paragraphs.length - 1] : ''),
+    bulletPoints: dbBulletPoints,
+    likes: typeof raw.likes_count === 'number' ? raw.likes_count : 0,
+    shares: typeof raw.shares_count === 'number' ? raw.shares_count : 0,
   };
 }
 
@@ -220,107 +230,66 @@ export async function getMarketArticles(params?: {
       : Array.isArray(res?.data)
         ? res.data
         : [];
-    if (list.length > 0) {
-      return list.map(mapToBlogArticle);
-    }
-  } catch {
-    // Fallback ke BLOG_ARTICLES jika API belum tersedia
+
+    return list.map(mapToBlogArticle);
+  } catch (error) {
+    console.error('[blogApi.getMarketArticles] Failed to fetch articles:', error);
+    return [];
   }
-
-  return BLOG_ARTICLES.filter((item: BlogArticle) => {
-    const matchCategory =
-      !params?.category ||
-      params.category === 'All' ||
-      item.category.toLowerCase() === params.category.toLowerCase();
-
-    const keyword = params?.search?.trim().toLowerCase();
-    const matchSearch =
-      !keyword ||
-      item.title.toLowerCase().includes(keyword) ||
-      item.excerpt.toLowerCase().includes(keyword) ||
-      item.category.toLowerCase().includes(keyword);
-
-    return matchCategory && matchSearch;
-  });
 }
 
 export async function getMarketArticleBySlug(slug: string): Promise<ArticleDetail | null> {
-  const resolvedSlug = SLUG_ALIASES[slug] || slug;
-
   try {
     const res = await api.get<ApiSingleResponse<MarketArticle> | MarketArticle>(
-      `/blog/${encodeURIComponent(resolvedSlug)}`
+      `/blog/${encodeURIComponent(slug)}`
     );
     const raw =
       res && typeof res === 'object' && 'data' in res
         ? res.data ?? null
         : (res as MarketArticle) ?? null;
 
-    if (raw) {
-      return mapToArticleDetail(raw);
-    }
-  } catch {
-    // Fallback ke ARTICLES_DB jika endpoint detail slug belum tersedia
+    if (!raw) return null;
+    return mapToArticleDetail(raw);
+  } catch (error) {
+    console.error('[blogApi.getMarketArticleBySlug] Failed to fetch article:', error);
+    return null;
   }
-
-  return (
-    ARTICLES_DB.find(
-      (article: ArticleDetail) =>
-        article.slug === resolvedSlug || article.id === resolvedSlug
-    ) ?? null
-  );
 }
 
 export async function getRelatedArticles(
   currentSlug: string,
   limit = 3
 ): Promise<ArticleDetail[]> {
-  const resolvedSlug = SLUG_ALIASES[currentSlug] || currentSlug;
-
   try {
     const articles = await getMarketArticles();
     const filtered = articles
-      .filter((a: BlogArticle) => a.slug !== resolvedSlug)
+      .filter((a: BlogArticle) => a.slug !== currentSlug)
       .slice(0, limit);
 
-    if (filtered.length > 0) {
-      return filtered.map((item: BlogArticle) => {
-        const matchedDetail = ARTICLES_DB.find(
-          (d: ArticleDetail) => d.slug === item.slug
-        );
-        if (matchedDetail) return matchedDetail;
-
-        return {
-          id: String(item.id),
-          slug: item.slug,
-          title: item.title,
-          category: item.category,
-          date: item.date,
-          readTime: item.readTime,
-          image: item.image,
-          author: {
-            name: item.author.name,
-            avatar: item.author.avatar,
-            role: 'Contributor',
-          },
-          leadLocation: `${item.category} —`,
-          paragraphs: [item.excerpt],
-          subheading: 'Overview',
-          subParagraph: item.excerpt,
-          bulletPoints: [],
-          likes: 12,
-          shares: 4,
-        };
-      });
-    }
+    return filtered.map((item: BlogArticle) => ({
+      id: String(item.id),
+      slug: item.slug,
+      title: item.title,
+      category: item.category,
+      date: item.date,
+      readTime: item.readTime,
+      image: item.image,
+      author: {
+        name: item.author.name,
+        avatar: item.author.avatar,
+        role: 'Contributor',
+      },
+      leadLocation: `${item.category} —`,
+      paragraphs: [item.excerpt],
+      subheading: 'Overview',
+      subParagraph: item.excerpt,
+      bulletPoints: [],
+      likes: 0,
+      shares: 0,
+    }));
   } catch {
-    // Abaikan dan gunakan ARTICLES_DB
+    return [];
   }
-
-  return ARTICLES_DB.filter((a: ArticleDetail) => a.slug !== resolvedSlug).slice(
-    0,
-    limit
-  );
 }
 
 export async function postArticleComment(
