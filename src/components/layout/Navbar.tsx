@@ -85,10 +85,10 @@ export default function Navbar() {
     }
   };
 
-  // Arahkan langsung ke halaman khusus /login atau /signup
-  const openAuthModal = (tab: 'login' | 'signup') => {
+  // Semua akses autentikasi diarahkan langsung ke /login (Social OAuth)
+  const openAuthModal = () => {
     setIsMobileMenuOpen(false);
-    router.push(tab === 'signup' ? '/signup' : '/login');
+    router.push('/login');
   };
 
   return (

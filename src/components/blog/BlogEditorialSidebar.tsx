@@ -2,19 +2,22 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { BlogArticle } from '../../types';
+import { type BlogArticle } from '@/types/blog';
 
 interface BlogEditorialSidebarProps {
-  trendingArticles: BlogArticle[];
+  newReleaseArticles: BlogArticle[];
 }
 
 export default function BlogEditorialSidebar({
-  trendingArticles,
+  newReleaseArticles,
 }: BlogEditorialSidebarProps) {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+
+  const newReleases = newReleaseArticles.slice(0, 5);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,37 +28,61 @@ export default function BlogEditorialSidebar({
 
   return (
     <aside className="space-y-5">
-      {/* Trending Now Numbered Box */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-black text-slate-900">Trending Now</h3>
-          <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-600 text-[10px] font-extrabold uppercase tracking-wider">
-            LIVE
-          </span>
-        </div>
+      {/* New Releases Widget (Menggantikan posisi Trending Now di bagian atas sidebar) */}
+      {newReleases.length > 0 && (
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <h3 className="text-sm font-black tracking-tight text-slate-900">
+                New Releases
+              </h3>
+            </div>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Fresh
+            </span>
+          </div>
 
-        <div className="space-y-3.5">
-          {trendingArticles.slice(0, 5).map((item, idx) => (
-            <Link
-              key={item.id}
-              href={`/blog/${item.slug}`}
-              className="flex items-start gap-3 group"
-            >
-              <span className="text-base font-black text-slate-300 group-hover:text-indigo-600 transition-colors w-4 shrink-0 leading-tight">
-                {idx + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-1">
-                  {item.title}
-                </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  {item.views} • {item.date}
-                </p>
-              </div>
-            </Link>
-          ))}
+          <div className="divide-y divide-slate-100">
+            {newReleases.map((item) => (
+              <Link
+                key={item.id}
+                href={`/blog/${item.slug}`}
+                className="group flex items-start gap-3 py-3 first:pt-0 last:pb-0"
+              >
+                {item.image ? (
+                  <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-200/80">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      sizes="56px"
+                      unoptimized
+                      className="object-cover group-hover:scale-105 transition-transform duration-200"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200/80 shrink-0 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                    TMV
+                  </div>
+                )}
+
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+                    {item.category}
+                  </span>
+                  <h4 className="text-xs font-bold text-slate-900 line-clamp-2 group-hover:text-indigo-600 transition-colors leading-snug">
+                    {item.title}
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    {item.date} • {item.readTime}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Get the Daily Briefing Dark Card */}
       <div className="bg-linear-to-br from-slate-950 via-indigo-950 to-slate-900 rounded-2xl p-5 text-white shadow-md">

@@ -28,8 +28,8 @@ export default function NavbarActions({
 
   return (
     <div className="hidden lg:flex items-center gap-4">
-      <Link 
-        href="/cart" 
+      <Link
+        href="/cart"
         className="relative p-2 text-slate-300 hover:text-indigo-400 transition-colors"
       >
         <ShoppingCart className="w-5 h-5" />
@@ -41,7 +41,7 @@ export default function NavbarActions({
       </Link>
 
       {!mounted ? (
-        <div className="w-20 h-10 bg-slate-800 rounded-xl animate-pulse" />
+        <div className="w-24 h-10 bg-slate-800 rounded-xl animate-pulse" />
       ) : isLoggedIn ? (
         <div className="relative">
           <button
@@ -51,11 +51,11 @@ export default function NavbarActions({
           >
             <div className="relative w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-sm border border-indigo-200 overflow-hidden">
               {currentUser?.avatar_url ? (
-                <Image 
-                  src={currentUser.avatar_url} 
-                  alt={currentUser.username || 'User Avatar'} 
-                  fill 
-                  className="object-cover" 
+                <Image
+                  src={currentUser.avatar_url}
+                  alt={currentUser.username || 'User Avatar'}
+                  fill
+                  className="object-cover"
                 />
               ) : (
                 <UserIcon className="w-4 h-4 text-indigo-600" />
@@ -99,19 +99,16 @@ export default function NavbarActions({
         </div>
       ) : (
         <div className="flex items-center gap-3">
+          <span className="hidden xl:inline-block text-[11px] font-medium text-slate-400">
+            
+          </span>
           <button
             type="button"
             onClick={() => openAuthModal('login')}
-            className="px-5 py-2 text-sm font-semibold text-slate-200 bg-transparent hover:bg-slate-800/60 border border-slate-700/80 rounded-xl transition-all cursor-pointer"
-          >
-            Login
-          </button>
-          <button
-            type="button"
-            onClick={() => openAuthModal('signup')}
+            title="Sign in or auto-create account with Google or X"
             className="px-5 py-2 text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-600/25 rounded-xl transition-all cursor-pointer"
           >
-            Sign Up
+            Sign In
           </button>
         </div>
       )}

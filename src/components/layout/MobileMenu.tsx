@@ -231,21 +231,17 @@ export default function MobileMenu({
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2">
             <Link
               href="/login"
               onClick={onClose}
-              className="w-full text-center py-2.5 text-sm font-semibold text-slate-200 bg-transparent hover:bg-slate-800/60 border border-slate-700/80 rounded-xl transition-all"
+              className="w-full text-center py-2.5 text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 rounded-xl shadow-lg shadow-indigo-600/25 transition-all"
             >
-              Login
+              Sign In
             </Link>
-            <Link
-              href="/signup"
-              onClick={onClose}
-              className="w-full text-center py-2.5 text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 rounded-xl shadow-lg shadow-indigo-600/25"
-            >
-              Sign Up
-            </Link>
+            <p className="text-[11px] text-center text-slate-400">
+              
+            </p>
           </div>
         )}
       </div>

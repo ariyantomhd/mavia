@@ -22,11 +22,16 @@ export default function BlogFilterBar({
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
       <div>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-          Top Stories
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            Trending
+          </h2>
+          <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-600 text-[10px] font-extrabold uppercase tracking-wider">
+            LIVE
+          </span>
+        </div>
         <p className="text-xs text-slate-500 mt-0.5">
-          Curated engineering guides, architecture notes, and indie product insights.
+          Most-read engineering guides, architecture notes, and indie product insights.
         </p>
       </div>
 
