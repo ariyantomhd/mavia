@@ -52,30 +52,31 @@ export default function DealsHeroBanner({ featuredDeal }: DealsHeroBannerProps) 
             <span>Limited-Time Marketplace Deals</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-            Flash Sale & Bundle Deals{' '}
-            <span className="text-orange-400">Hemat Hingga 60%</span> untuk Developer & Kreator
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight text-white!">
+            Flash Sale &amp; Bundle Deals{' '}
+            <span className="text-orange-400! whitespace-nowrap">Save Up to 60%</span>{' '}
+            for Developers &amp; Creators
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Dapatkan starter kit Next.js, template Web3 dApp, dan UI kit siap produksi dengan harga promo terbatas. Gunakan kode kupon{' '}
+            Grab production-ready Next.js starter kits, Web3 dApp templates, and UI kits at limited-time promotional prices. Apply coupon code{' '}
             <code className="bg-slate-800 border border-slate-700 text-emerald-400 px-2 py-0.5 rounded font-mono font-bold">
               WELCOME10
             </code>{' '}
-            saat checkout untuk tambahan diskon ekstra.
+            at checkout for an extra discount.
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <a
               href="#deals-catalog"
-              className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-extrabold uppercase tracking-wider px-5 py-3 rounded-xl transition shadow-md shadow-orange-500/20"
+              className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white! text-xs font-extrabold uppercase tracking-wider px-5 py-3 rounded-xl transition shadow-md shadow-orange-500/20"
             >
-              <span>Lihat Semua Promo</span>
+              <span>Browse All Deals</span>
               <ArrowDownRight className="h-4 w-4" />
             </a>
             <div className="inline-flex items-center gap-1.5 text-xs text-slate-300 bg-slate-800/80 border border-slate-700 px-3.5 py-2.5 rounded-xl font-mono">
               <Tag className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Lisensi Regular & Extended Berlaku</span>
+              <span>Regular &amp; Extended Licenses Included</span>
             </div>
           </div>
         </div>
@@ -84,21 +85,21 @@ export default function DealsHeroBanner({ featuredDeal }: DealsHeroBannerProps) 
         <div className="bg-slate-950/85 border border-slate-800 rounded-2xl p-5 sm:p-6 min-w-65 space-y-3 shrink-0">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-orange-400 font-mono">
             <Clock className="h-4 w-4" />
-            <span>Promo Berakhir Dalam</span>
+            <span>Deals End In</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2.5 text-center">
             <div className="bg-slate-900 border border-slate-800 rounded-xl py-3 px-2">
-              <span className="text-2xl font-black text-white font-mono">{timeLeft.hours}</span>
-              <p className="text-[10px] text-slate-400 uppercase mt-0.5">Jam</p>
+              <span className="text-2xl font-black text-white! font-mono">{timeLeft.hours}</span>
+              <p className="text-[10px] text-slate-400 uppercase mt-0.5">Hours</p>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl py-3 px-2">
-              <span className="text-2xl font-black text-white font-mono">{timeLeft.minutes}</span>
-              <p className="text-[10px] text-slate-400 uppercase mt-0.5">Menit</p>
+              <span className="text-2xl font-black text-white! font-mono">{timeLeft.minutes}</span>
+              <p className="text-[10px] text-slate-400 uppercase mt-0.5">Mins</p>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl py-3 px-2">
-              <span className="text-2xl font-black text-orange-400 font-mono">{timeLeft.seconds}</span>
-              <p className="text-[10px] text-slate-400 uppercase mt-0.5">Detik</p>
+              <span className="text-2xl font-black text-orange-400! font-mono">{timeLeft.seconds}</span>
+              <p className="text-[10px] text-slate-400 uppercase mt-0.5">Secs</p>
             </div>
           </div>
 

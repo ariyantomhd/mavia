@@ -65,10 +65,10 @@ export default function DealsSidebarFilter({
         />
       </div>
 
-      {/* Kategori */}
+      {/* Category */}
       <div className="space-y-2">
         <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-          Kategori Promo
+          Deal Category
         </label>
         <select
           value={categoryDropdown}
@@ -83,10 +83,10 @@ export default function DealsSidebarFilter({
         </select>
       </div>
 
-      {/* Maksimal Harga */}
+      {/* Max Price */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between text-xs font-extrabold">
-          <span className="text-slate-700 uppercase tracking-wider">Maks. Harga Deal</span>
+          <span className="text-slate-700 uppercase tracking-wider">Max Deal Price</span>
           <span className="text-orange-600 font-mono">${maxPrice}</span>
         </div>
         <input
@@ -108,7 +108,7 @@ export default function DealsSidebarFilter({
       {safeTech.length > 0 && (
         <div className="space-y-2.5 pt-2 border-t border-slate-100">
           <span className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-            Tech & Framework
+            Tech &amp; Framework
           </span>
           <div className="flex flex-wrap gap-2">
             {safeTech.map((tech) => {

@@ -1,120 +1,89 @@
 // src/app/blog/[id]/page.tsx
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useParams } from 'next/navigation';
-
-// Import komponen modular utama dan variasi template
-import BlogDetailHeader from '@/components/blog/BlogDetailHeader';
-import BlogDetailContentBox from '@/components/blog/BlogDetailContentBox';
-import BlogCommentsSection from '@/components/blog/BlogCommentsSection';
-import BlogTemplateMinimal from '@/components/blog/BlogTemplateMinimal';
-import BlogTemplateMagazine from '@/components/blog/BlogTemplateMagazine';
-
-type Author = {
-  name: string;
-  avatar: string;
-  role: string;
-};
-
-type Article = {
-  id: string;
-  template: 'default' | 'minimal' | 'magazine';
-  title: string;
-  category: string;
-  categoryColor: string;
-  date: string;
-  readTime: string;
-  author: Author;
-  content: string[];
-};
-
-// NOTE: BlogDetailHeader expects a more minimal article shape than the full article structure.
-// Keep the runtime data intact while making the prop type compatible with the component contract.
-type BlogDetailHeaderArticle = {
-  title: string;
-  category: string;
-  categoryColor: string;
-  date: string;
-  author: string;
-};
-
-const articlesData: Record<string, Article> = {
-  '1': {
-    id: '1',
-    template: 'default', // Template 1: Immersive / Hero Foto Besar di Atas
-    title: 'Building Scalable APIs with Node.js',
-    category: 'Backend',
-    categoryColor: 'bg-indigo-100 text-indigo-700',
-    date: 'Dec 05, 2023',
-    readTime: '5 min read',
-    author: { name: 'Admin Themavia', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop', role: 'Lead Architect' },
-    content: [
-      'Building robust and scalable APIs is a foundational requirement for modern web and mobile applications.',
-      'In this article, we explore best practices for structuring your Express and Node.js applications.'
-    ]
-  },
-  '2': {
-    id: '2',
-    template: 'minimal', // Template 2: Minimalist Author Focus
-    title: 'Mastering React Server Components',
-    category: 'Frontend',
-    categoryColor: 'bg-blue-100 text-blue-700',
-    date: 'Dec 10, 2023',
-    readTime: '4 min read',
-    author: { name: 'Sarah Ananda', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop', role: 'UI/UX Lead' },
-    content: [
-      'React Server Components (RSC) represent a paradigm shift in how we build user interfaces.',
-      'By shifting rendering to the server, we drastically reduce client bundle sizes and improve loading speed.'
-    ]
-  },
-  '3': {
-    id: '3',
-    template: 'magazine', // Template 3: Magazine / Editorial Style
-    title: 'The Ultimate Guide to PostgreSQL Performance',
-    category: 'Database',
-    categoryColor: 'bg-emerald-100 text-emerald-700',
-    date: 'Nov 18, 2023',
-    readTime: '7 min read',
-    author: { name: 'Muhammad Ariyanto', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100&auto=format&fit=crop', role: 'Fullstack Engineer' },
-    content: [
-      'Database performance can make or break an application when user traffic scales exponentially.',
-      'Proper indexing, connection pooling, and query optimization are mandatory steps for production databases.'
-    ]
-  }
-};
+import { ARTICLES_DB, ArticleDetail, SLUG_ALIASES } from '@/types/blog-id';
+import BlogDetailTopBar from '@/components/blog-id/BlogDetailTopBar';
+import BlogArticleBody from '@/components/blog-id/BlogArticleBody';
+import BlogEngagementComments from '@/components/blog-id/BlogEngagementComments';
+import BlogDetailSidebar from '@/components/blog-id/BlogDetailSidebar';
 
 function BlogDetailContent() {
   const params = useParams();
-  const rawId = params?.id;
-  const id = Array.isArray(rawId) ? rawId[0] : rawId;
+  const rawSlug = params?.id;
+  const slugParam = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug || '1';
+  const resolvedSlug = SLUG_ALIASES[slugParam] || slugParam;
 
-  const article = (id && articlesData[id]) ? articlesData[id] : articlesData['1'];
+  const article: ArticleDetail =
+    ARTICLES_DB.find(
+      (item: ArticleDetail) =>
+        item.slug === resolvedSlug || item.id === resolvedSlug,
+    ) || ARTICLES_DB[0];
 
-  // Conditional Rendering berdasarkan template artikel
-  if (article.template === 'minimal') {
-    return <BlogTemplateMinimal article={article} />;
-  }
+  const relatedArticles: ArticleDetail[] = ARTICLES_DB.filter(
+    (item: ArticleDetail) => item.id !== article.id,
+  ).slice(0, 5);
 
-  if (article.template === 'magazine') {
-    return <BlogTemplateMagazine article={article} />;
-  }
+  const [shareCount, setShareCount] = useState<number>(article.shares);
+  const [copied, setCopied] = useState<boolean>(false);
 
-  // Default Template (Immersive Layout dengan Foto Hero & Komentar Interaktif)
-  const headerArticle: BlogDetailHeaderArticle = {
-    title: article.title,
-    category: article.category,
-    categoryColor: article.categoryColor,
-    date: article.date,
-    author: article.author.name,
+  const getShareUrl = () =>
+    typeof window !== 'undefined' ? window.location.href : '';
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getShareUrl());
+      setCopied(true);
+      setShareCount((c: number) => c + 1);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Ignore clipboard permission errors
+    }
+  };
+
+  const handleSocialShare = (
+    platform: 'x' | 'whatsapp' | 'linkedin' | 'facebook',
+  ) => {
+    const url = encodeURIComponent(getShareUrl());
+    const text = encodeURIComponent(article.title);
+    setShareCount((c: number) => c + 1);
+
+    const shareUrls: Record<typeof platform, string> = {
+      x: `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+      whatsapp: `https://api.whatsapp.com/send?text=${text}%20${url}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+    };
+
+    window.open(shareUrls[platform], '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <div className="min-h-screen pb-20">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-        <BlogDetailHeader article={headerArticle} />
-        <BlogDetailContentBox articleId={article.id} content={article.content} />
-        <BlogCommentsSection />
+    <div className="min-h-screen pt-6 pb-20 text-slate-900">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm overflow-hidden">
+          <BlogDetailTopBar />
+
+          <div className="grid grid-cols-1 lg:grid-cols-12">
+            <article className="lg:col-span-8 p-5 sm:p-8 lg:border-r border-slate-200/80">
+              <BlogArticleBody article={article} />
+              <BlogEngagementComments
+                initialLikes={article.likes}
+                shareCount={shareCount}
+                onQuickShare={handleCopyLink}
+              />
+            </article>
+
+            <BlogDetailSidebar
+              articleTitle={article.title}
+              relatedArticles={relatedArticles}
+              copied={copied}
+              onCopyLink={handleCopyLink}
+              onSocialShare={handleSocialShare}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -122,7 +91,13 @@ function BlogDetailContent() {
 
 export default function BlogDetailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Memuat artikel...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center text-sm font-semibold text-slate-600">
+          Loading article...
+        </div>
+      }
+    >
       <BlogDetailContent />
     </Suspense>
   );

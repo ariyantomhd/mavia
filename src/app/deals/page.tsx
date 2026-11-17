@@ -5,7 +5,6 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiDeals, DealProduct } from '@/services/apiDeals';
 
-// Import komponen modular deals
 import DealsHeroBanner from '@/components/deals/DealsHeroBanner';
 import DealsCategoryPills from '@/components/deals/DealsCategoryPills';
 import DealsSidebarFilter from '@/components/deals/DealsSidebarFilter';
@@ -13,7 +12,6 @@ import DealsToolbar from '@/components/deals/DealsToolbar';
 import DealsGridSection from '@/components/deals/DealsGridSection';
 
 export default function DealsPage() {
-  // State parameter query yang diteruskan langsung ke backend
   const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>('All Deals');
   const [flashSaleOnly, setFlashSaleOnly] = useState<boolean>(false);
   const [maxPrice, setMaxPrice] = useState<number>(200);
@@ -52,14 +50,12 @@ export default function DealsPage() {
     ? response!.data!.availableTech
     : [];
 
-  // Handle toggle pilihan framework
   const toggleTech = (techName: string) => {
     setSelectedTech((prev) =>
       prev.includes(techName) ? prev.filter((t) => t !== techName) : [...prev, techName]
     );
   };
 
-  // Reset semua filter
   const handleResetFilter = () => {
     setFlashSaleOnly(false);
     setSelectedCategoryTab('All Deals');
@@ -70,21 +66,21 @@ export default function DealsPage() {
   };
 
   return (
-    <div className="min-h-screen  text-slate-800 pb-16">
+    <div className="min-h-screen text-slate-800 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* 1. HERO FLASH SALE BANNER UTAMA */}
-        <DealsHeroBanner />
+        {/* 1. Primary Flash Sale Hero Banner */}
+        <DealsHeroBanner featuredDeal={deals[0] ?? null} />
 
-        {/* 2. CATEGORY FILTER PILLS HORIZONTAL */}
+        {/* 2. Horizontal Category Filter Pills */}
         <DealsCategoryPills
           categories={categories}
           selectedCategoryTab={selectedCategoryTab}
           onSelectCategory={setSelectedCategoryTab}
         />
 
-        {/* 3. MAIN GRID & SIDEBAR FILTER */}
+        {/* 3. Main Grid & Sidebar Filter */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-          {/* LEFT SIDEBAR FILTER */}
+          {/* Left Sidebar Filter */}
           <DealsSidebarFilter
             categories={categories}
             techFrameworks={techFrameworks}
@@ -99,7 +95,7 @@ export default function DealsPage() {
             handleResetFilter={handleResetFilter}
           />
 
-          {/* RIGHT CONTENT AREA */}
+          {/* Right Content Area */}
           <div className="lg:col-span-3 space-y-6">
             {/* Top Toolbar (Search & Sort) */}
             <DealsToolbar

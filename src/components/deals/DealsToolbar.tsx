@@ -26,7 +26,7 @@ export default function DealsToolbar({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cari nama produk atau promo deals..."
+          placeholder="Search products or deals..."
           className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-orange-500"
         />
       </div>
@@ -34,7 +34,8 @@ export default function DealsToolbar({
       {/* Count & Sort Dropdown */}
       <div className="flex items-center justify-between sm:justify-end gap-4">
         <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
-          Menampilkan <strong className="text-slate-900">{totalFiltered}</strong> promo
+          Showing <strong className="text-slate-900">{totalFiltered}</strong>{' '}
+          {totalFiltered === 1 ? 'deal' : 'deals'}
         </span>
 
         <div className="flex items-center gap-2">
@@ -44,10 +45,10 @@ export default function DealsToolbar({
             onChange={(e) => setSortBy(e.target.value)}
             className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-orange-500 cursor-pointer"
           >
-            <option value="lowest">Harga Terendah</option>
-            <option value="highest">Harga Tertinggi</option>
-            <option value="discount">Diskon Terbesar</option>
-            <option value="newest">Terbaru</option>
+            <option value="lowest">Lowest Price</option>
+            <option value="highest">Highest Price</option>
+            <option value="discount">Biggest Discount</option>
+            <option value="newest">Newest</option>
           </select>
         </div>
       </div>

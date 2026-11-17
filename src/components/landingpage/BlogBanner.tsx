@@ -1,158 +1,170 @@
 // src/components/landingpage/BlogBanner.tsx
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, BookOpen, Clock, Sparkles } from 'lucide-react';
+import { getMarketArticles } from '@/services/blogApi';
+import type { BlogArticle } from '@/types/blog';
 
-interface BlogPost {
+interface BannerSlide {
   id: string;
   title: string;
-  category: string;
-  readTime: string;
+  ctaText: string;
   href: string;
   image: string;
 }
 
+const SLIDE_DURATION = 4500;
+const MAX_SLIDES = 4;
+
 export default function BlogBanner() {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [slides, setSlides] = useState<BannerSlide[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
-  const dummyBlogs: BlogPost[] = [
-    {
-      id: '1',
-      title: 'Membangun Arsitektur Micro-SaaS Skalabel dengan Next.js & Supabase',
-      category: 'Engineering',
-      readTime: '4 min read',
-      href: '/blog/arsitektur-micro-saas-nextjs-supabase',
-      image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=600&auto=format&fit=crop',
-    },
-    {
-      id: '2',
-      title: 'Optimasi Performa Web3 DApp dan Manajemen State Supabase Realtime',
-      category: 'Web3 & dApps',
-      readTime: '6 min read',
-      href: '/blog/optimasi-performa-web3-dapp',
-      image: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=600&auto=format&fit=crop',
-    },
-    {
-      id: '3',
-      title: 'Panduan Monetisasi Digital Produk untuk Developer Indie di 2026',
-      category: 'Business',
-      readTime: '5 min read',
-      href: '/blog/panduan-monetisasi-digital-produk',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=600&auto=format&fit=crop',
-    },
-  ];
-
-  // Efek Carousel Otomatis (Auto-scroll)
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
+    let isMounted = true;
 
-    let scrollInterval: NodeJS.Timeout;
+    async function loadSlides() {
+      try {
+        const articles: BlogArticle[] = await getMarketArticles();
+        if (!isMounted) return;
 
-    const startAutoScroll = () => {
-      scrollInterval = setInterval(() => {
-        if (!container) return;
-        
-        const maxScrollLeft = container.scrollWidth - container.clientWidth;
-        if (container.scrollLeft >= maxScrollLeft - 10) {
-          container.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          container.scrollBy({ left: 304, behavior: 'smooth' });
-        }
-      }, 3500);
-    };
+        const mappedSlides: BannerSlide[] = articles
+          .slice(0, MAX_SLIDES)
+          .map((article) => ({
+            id: String(article.id),
+            title: article.title,
+            ctaText: 'Read Now',
+            href: `/blog/${article.slug}`,
+            image: article.image,
+          }));
 
-    startAutoScroll();
-
-    const handleMouseEnter = () => clearInterval(scrollInterval);
-    const handleMouseLeave = () => startAutoScroll();
-
-    container.addEventListener('mouseenter', handleMouseEnter);
-    container.addEventListener('mouseleave', handleMouseLeave);
-
-    return () => {
-      clearInterval(scrollInterval);
-      if (container) {
-        container.removeEventListener('mouseenter', handleMouseEnter);
-        container.removeEventListener('mouseleave', handleMouseLeave);
+        setSlides(mappedSlides);
+        setActiveIndex(0);
+      } catch {
+        if (isMounted) setSlides([]);
+      } finally {
+        if (isMounted) setLoading(false);
       }
+    }
+
+    loadSlides();
+    return () => {
+      isMounted = false;
     };
   }, []);
 
-  return (
-    <div className="bg-white border border-slate-200/80 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col justify-between h-full">
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-              <BookOpen className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                Themavia Insights & Blog
-              </h2>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Tips, arsitektur kode, dan strategi developer.
-              </p>
-            </div>
+  useEffect(() => {
+    if (isPaused || slides.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % slides.length);
+    }, SLIDE_DURATION);
+
+    return () => clearInterval(timer);
+  }, [isPaused, slides.length]);
+
+  if (loading) {
+    return (
+      <div className="relative bg-[#251b3d] border border-white/10 rounded-3xl overflow-hidden flex items-stretch justify-between min-h-47.5 sm:min-h-51.25 h-full p-5 sm:p-6 animate-pulse">
+        <div className="flex flex-col justify-between w-[60%]">
+          <div className="space-y-2.5">
+            <div className="h-4 bg-white/15 rounded-lg w-11/12" />
+            <div className="h-4 bg-white/15 rounded-lg w-3/4" />
+            <div className="h-9 bg-white/15 rounded-2xl w-28 mt-4" />
           </div>
-          <Link
-            href="/blog"
-            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group shrink-0"
-          >
-            <span>All articles</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+          <div className="flex items-center gap-1.5 pt-4">
+            <div className="h-1.5 w-8 rounded-full bg-white/20" />
+            <div className="h-1.5 w-8 rounded-full bg-white/10" />
+            <div className="h-1.5 w-8 rounded-full bg-white/10" />
+          </div>
+        </div>
+        <div className="w-[36%] rounded-2xl bg-white/10" />
+      </div>
+    );
+  }
+
+  if (slides.length === 0) {
+    return null;
+  }
+
+  const currentBlog = slides[activeIndex] ?? slides[0];
+
+  return (
+    <div
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className="relative bg-[#251b3d] border border-white/10 rounded-3xl overflow-hidden flex items-stretch justify-between min-h-47.5 sm:min-h-51.25 h-full group"
+    >
+      {/* Kiri: Judul Putih, Pill CTA Button, dan Progress Bar Slide */}
+      <div className="relative z-10 flex flex-col justify-between p-5 sm:p-6 w-[60%]">
+        <div>
+          <Link href={currentBlog.href}>
+            <h2 className="text-base sm:text-lg font-extrabold text-white leading-snug tracking-tight line-clamp-3 hover:text-purple-200 transition-colors">
+              {currentBlog.title}
+            </h2>
           </Link>
-        </div>
 
-        {/* List Blog Berbentuk Carousel Otomatis */}
-        <div 
-          ref={scrollContainerRef}
-          className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x scroll-smooth"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {dummyBlogs.map((blog) => (
+          <div className="mt-3.5">
             <Link
-              key={blog.id}
-              href={blog.href}
-              className="w-67.5 sm:w-72.5 p-3 rounded-2xl bg-slate-50/80 hover:bg-indigo-50/40 border border-slate-100 hover:border-indigo-100 transition-all group shrink-0 snap-start flex flex-col justify-between"
+              href={currentBlog.href}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-[#c4b5fd] hover:bg-white text-[#1e1633] text-xs sm:text-sm font-bold transition-colors"
             >
-              <div>
-                {/* Perbaikan container gambar agar aman dan tidak meluber */}
-                <div className="relative w-full h-32 rounded-xl overflow-hidden mb-3 bg-slate-100 border border-slate-200/60">
-                  <Image
-                    src={blog.image}
-                    alt={blog.title}
-                    fill
-                    sizes="(max-width: 768px) 270px, 290px"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-indigo-600 font-semibold mb-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-indigo-50">{blog.category}</span>
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <Clock className="w-3 h-3" />
-                    {blog.readTime}
-                  </span>
-                </div>
-                <h3 className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-indigo-600 transition-colors line-clamp-2 leading-snug">
-                  {blog.title}
-                </h3>
-              </div>
+              {currentBlog.ctaText}
             </Link>
-          ))}
+          </div>
         </div>
+
+        {/* Horizontal Progress Bar Indicators */}
+        {slides.length > 1 && (
+          <div className="flex items-center gap-1.5 pt-4">
+            {slides.map((post, idx) => {
+              const isActive = idx === activeIndex;
+              const isPast = idx < activeIndex;
+
+              return (
+                <button
+                  key={post.id}
+                  type="button"
+                  aria-label={`Slide ${idx + 1}: ${post.title}`}
+                  onClick={() => setActiveIndex(idx)}
+                  className="relative h-1.5 w-7 sm:w-8 rounded-full bg-white/20 overflow-hidden cursor-pointer"
+                >
+                  <span
+                    className={`block h-full rounded-full bg-[#a78bfa] transition-all duration-300 ${
+                      isActive
+                        ? 'w-full'
+                        : isPast
+                          ? 'w-full opacity-50'
+                          : 'w-0'
+                    }`}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-        <span className="flex items-center gap-1 font-medium text-slate-500">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Curated weekly by authors
-        </span>
-        <span className="font-bold text-slate-600">Free Access</span>
-      </div>
+      {/* Kanan: Slot Visual Artikel dari Backend */}
+      <Link
+        href={currentBlog.href}
+        className="relative w-[40%] shrink-0 flex items-end justify-center p-2"
+      >
+        <div className="relative w-full h-full">
+          <Image
+            key={currentBlog.id}
+            src={currentBlog.image}
+            alt={currentBlog.title}
+            fill
+            sizes="(max-width: 768px) 160px, 220px"
+            className="object-contain object-bottom group-hover:scale-105 transition-transform duration-500"
+          />
+        </div>
+      </Link>
     </div>
   );
 }

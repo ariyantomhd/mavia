@@ -8,7 +8,7 @@ import { productAPI } from '@/services/apiProducts';
 import ProductCard from '@/components/ProductCard';
 import { Product } from '@/types';
 
-// Import komponen modular
+// Import modular components
 import SearchForm from '@/components/SearchForm';
 import CategoryDropdown from '@/components/CategoryDropdown';
 import FilterDropdown from '@/components/FilterDropdown';
@@ -23,8 +23,8 @@ function ProductsContent() {
   const techParam = searchParams.get('tech') || 'ALL';
   const tagParam = searchParams.get('tag') || undefined;
   const searchParam = searchParams.get('search') || '';
-  const sortParam = searchParams.get('sort') || ''; 
-  const filterParam = searchParams.get('filter') || ''; 
+  const sortParam = searchParams.get('sort') || '';
+  const filterParam = searchParams.get('filter') || '';
   const pageParam = Number(searchParams.get('page')) || 1;
 
   const ITEMS_PER_PAGE = 8;
@@ -38,9 +38,10 @@ function ProductsContent() {
 
   const { data: response, isLoading, error } = useQuery({
     queryKey: ['products', categoryParam === 'ALL' ? undefined : categoryParam],
-    queryFn: () => productAPI.getProducts({ 
-      category: categoryParam === 'ALL' ? undefined : categoryParam 
-    }),
+    queryFn: () =>
+      productAPI.getProducts({
+        category: categoryParam === 'ALL' ? undefined : categoryParam,
+      }),
     enabled: categoryParam !== 'custom-development',
   });
 
@@ -99,20 +100,21 @@ function ProductsContent() {
     if (!products.length) return [];
 
     const result = products.filter((p: Product) => {
-      // PERBAIKAN: Menggunakan properti 'description' sesuai dengan interface Product yang baru
-      const matchesSearch = searchQuery === '' || 
+      // Match search query against product title and description
+      const matchesSearch =
+        searchQuery === '' ||
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const activeTech = techParam !== 'ALL' ? techParam : tagParam;
-      const matchesTech = !activeTech || (
-        Array.isArray(p.tags) && 
-        p.tags.some(t => t.toLowerCase() === activeTech.toLowerCase())
-      );
+      const matchesTech =
+        !activeTech ||
+        (Array.isArray(p.tags) &&
+          p.tags.some((t) => t.toLowerCase() === activeTech.toLowerCase()));
 
       let matchesFilter = true;
       if (filterParam === 'new') {
-        matchesFilter = Boolean(p.id); 
+        matchesFilter = Boolean(p.id);
       } else if (filterParam === 'deals') {
         matchesFilter = Boolean(p.regular_price);
       }
@@ -125,13 +127,13 @@ function ProductsContent() {
         const idA = typeof a.id === 'number' ? a.id : Number(a.id) || 0;
         const idB = typeof b.id === 'number' ? b.id : Number(b.id) || 0;
         return idB - idA;
-      }); 
+      });
     } else if (sortParam === 'bestseller') {
       result.sort((a: Product, b: Product) => {
         const priceA = typeof a.regular_price === 'number' ? a.regular_price : Number(a.regular_price) || 0;
         const priceB = typeof b.regular_price === 'number' ? b.regular_price : Number(b.regular_price) || 0;
         return priceA - priceB;
-      }); 
+      });
     }
 
     return result;
@@ -143,13 +145,20 @@ function ProductsContent() {
   }, [filteredProducts, pageParam]);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen text-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">
-              {tagParam ? `Tag: #${tagParam}` : categoryParam !== 'ALL' ? `Category: ${categoryParam}` : filterParam ? `Filter: ${filterParam}` : sortParam ? `Sort by: ${sortParam}` : 'All Digital Assets'}
+              {tagParam
+                ? `Tag: #${tagParam}`
+                : categoryParam !== 'ALL'
+                  ? `Category: ${categoryParam}`
+                  : filterParam
+                    ? `Filter: ${filterParam}`
+                    : sortParam
+                      ? `Sort by: ${sortParam}`
+                      : 'All Digital Assets'}
             </h1>
             <p className="text-slate-500 text-sm mt-1">
               Explore premium templates, source codes, and development kits.
@@ -157,59 +166,61 @@ function ProductsContent() {
           </div>
         </div>
 
-        {/* Toolbar Banner Bersih dengan bg-linear-to-r */}
-        <div className="bg-linear-to-r from-purple-950 via-indigo-800 to-teal-500 p-4 rounded-2xl shadow-xl mb-8">
-          <div className="backdrop-blur-md p-4 rounded-2xl flex flex-col md:flex-row items-center gap-4">
+        {/* Clean Toolbar Banner elevated at z-30 so dropdown menus render above product cards */}
+        <div className="relative z-30 bg-linear-to-r from-purple-950 via-indigo-800 to-teal-500 p-4 rounded-2xl shadow-xl mb-8">
+          <div className="p-4 rounded-2xl flex flex-col md:flex-row items-center gap-4">
             <div className="w-full md:flex-1">
-              <SearchForm 
-                searchQuery={searchQuery} 
-                onSearchChange={handleSearchChange} 
+              <SearchForm
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
               />
             </div>
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-              <CategoryDropdown 
-                selectedCategory={categoryParam} 
-                onCategoryChange={handleCategoryChange} 
+            <div className="relative z-40 flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+              <CategoryDropdown
+                selectedCategory={categoryParam}
+                onCategoryChange={handleCategoryChange}
               />
-              <FilterDropdown 
-                selectedTech={techParam} 
-                onTechChange={handleTechChange} 
-                availableTechs={availableTechs} 
+              <FilterDropdown
+                selectedTech={techParam}
+                onTechChange={handleTechChange}
+                availableTechs={availableTechs}
               />
             </div>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-slate-100 h-80 rounded-3xl animate-pulse" />
+              <div key={i} className="bg-white/60 h-80 rounded-3xl animate-pulse" />
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-200">
+          <div className="relative z-10 text-center py-20 bg-white/80 rounded-3xl border border-slate-200">
             <p className="text-red-500 font-bold">Failed to load products. Please try again later.</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-200 space-y-4">
+          <div className="relative z-10 text-center py-20 bg-white/80 rounded-3xl border border-slate-200 space-y-4">
             <div className="w-12 h-12 bg-indigo-50 text-[#583cf0] rounded-full flex items-center justify-center mx-auto">
               <Code2 className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-slate-700 font-bold">Tidak ada produk instan dalam kategori ini.</p>
-              <p className="text-xs text-slate-400 mt-1">Butuh solusi khusus? Anda bisa mengajukan custom development langsung ke tim kami.</p>
+              <p className="text-slate-700 font-bold">No ready-made products found in this category.</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Need a tailored solution? Request a custom development build directly from our team.
+              </p>
             </div>
-            <a 
-              href="/custom-development" 
+            <a
+              href="/custom-development"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#583cf0] text-white text-xs font-bold rounded-xl shadow-md hover:bg-[#4b2fe0] transition-all"
             >
-              <span>Ajukan Custom Development</span>
+              <span>Request Custom Development</span>
               <ArrowRight className="w-4 h-4" />
             </a>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {paginatedProducts.map((product: Product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -230,7 +241,7 @@ function ProductsContent() {
 
 export default function ProductsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+    <Suspense fallback={<div className="min-h-screen" />}>
       <ProductsContent />
     </Suspense>
   );

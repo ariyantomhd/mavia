@@ -6,12 +6,9 @@
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --color-primary: #4f46e5;
   --color-primary-hover: #4338ca;
-  --color-paper: #e6e6e6;
+  --color-paper: #E1E1DA;
   --color-ink: #0f172a;
   --color-brand-border: #e2e8f0;
-  
-  --color-mocca-bright: #f3e5d8;
-  --color-ungu-muda: #e0c3fc;
 }
 
 @layer base {
@@ -21,7 +18,8 @@
 
   body {
     color: var(--color-ink);
-    background: linear-gradient(135deg, #f3e5d8 0%, #e6e6e6 50%, #e0c3fc 100%);
+    background-color: #E1E1DA !important;
+    background-image: none !important;
     font-family: var(--font-sans);
     @apply transition-colors duration-200 antialiased min-h-screen text-sm sm:text-base;
   }
@@ -41,7 +39,7 @@
   }
 }
 
-/* Animasi */
+/* Keyframe Animations */
 @keyframes floatSmooth {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-15px) rotate(2deg); }
@@ -57,7 +55,8 @@
 .animate-float { animation: floatSmooth 4s ease-in-out infinite; }
 .animate-float-delayed { animation: floatSmooth 5s ease-in-out infinite 1s, chaosDart 9s ease-in-out infinite 2s; }
 
-/* Custom Utility Background Gradien Mocca ke Ungu Muda */
+/* Unified Solid Background Utility */
 .bg-mocca-ungu {
-  background: linear-gradient(135deg, #f3e5d8 0%, #e6e6e6 50%, #e0c3fc 100%);
+  background-color: #E1E1DA !important;
+  background-image: none !important;
 }

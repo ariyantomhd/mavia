@@ -35,7 +35,7 @@ export default function AuthModal({
   const isOpen = isControlled ? externalIsOpen : internalIsOpen;
 
   const isSignUp = mode === 'signup';
-  // Pada mode signin, tombol sosial langsung aktif tanpa perlu centang checkbox
+  // Pada mode signin, tombol Google & X langsung aktif tanpa perlu centang checkbox
   const isSocialDisabled = isSignUp ? !agreedToTerms : false;
 
   const handleClose = () => {
@@ -116,7 +116,7 @@ export default function AuthModal({
               <p className="mt-1 text-xs text-slate-500">
                 {isSignUp
                   ? 'Please review and accept our terms before signing up'
-                  : 'Choose your connected social account to continue'}
+                  : 'Sign in quickly with your Google or X account'}
               </p>
             </div>
 
@@ -168,7 +168,7 @@ export default function AuthModal({
               </>
             )}
 
-            {/* Status Bar + Grid 2x2 Tombol Sosial */}
+            {/* Status Bar + Tombol Google & X */}
             <div className="mt-5">
               <div className="mb-2.5 flex items-center justify-between">
                 <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">

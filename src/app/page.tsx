@@ -23,16 +23,12 @@ export default function HomePage() {
         const refreshToken = params.get('refresh_token');
 
         if (accessToken) {
-          // Simpan token ke localStorage untuk dikenali sesi auth app
           localStorage.setItem('token', accessToken);
           if (refreshToken) {
             localStorage.setItem('refresh_token', refreshToken);
           }
 
-          // Bersihkan URL hash agar bersih dari token mentah
           window.history.replaceState({}, document.title, window.location.pathname);
-
-          // Refresh halaman agar state store global / navbar ter-update ke status login
           window.location.reload();
         }
       }
@@ -54,17 +50,16 @@ export default function HomePage() {
     queryFn: () => productAPI.getBestDeals().catch(() => []),
   });
 
-  // Ekstrak data aman menggunakan konversi unknown terlebih dahulu agar lolos TypeScript
-  const featuredProducts: Product[] = Array.isArray(featuredResponse) 
-    ? featuredResponse 
+  const featuredProducts: Product[] = Array.isArray(featuredResponse)
+    ? featuredResponse
     : ((featuredResponse as unknown as { data?: Product[] })?.data || []);
 
-  const trendingProducts: Product[] = Array.isArray(popularResponse) 
-    ? popularResponse 
+  const trendingProducts: Product[] = Array.isArray(popularResponse)
+    ? popularResponse
     : ((popularResponse as unknown as { data?: Product[] })?.data || []);
 
-  const newArrivalsProducts: Product[] = Array.isArray(dealsResponse) 
-    ? dealsResponse 
+  const newArrivalsProducts: Product[] = Array.isArray(dealsResponse)
+    ? dealsResponse
     : ((dealsResponse as unknown as { data?: Product[] })?.data || []);
 
   const isLoading = loadingFeatured || loadingPopular || loadingDeals;
@@ -79,14 +74,13 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen text-slate-900">
-      <HeroSection 
-        onExploreProducts={handleExploreProducts} 
-        onWatchDemo={handleWatchDemo} 
+      <HeroSection
+        onExploreProducts={handleExploreProducts}
+        onWatchDemo={handleWatchDemo}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 mt-4 pb-16">
-        {/* Mengirim data dari parent page ke LandingSections */}
-        <LandingSections 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 -mt-4 sm:-mt-6 pb-16 relative z-10">
+        <LandingSections
           featured={featuredProducts.slice(0, 4)}
           trending={trendingProducts.slice(0, 3)}
           newArrivals={newArrivalsProducts.slice(0, 3)}

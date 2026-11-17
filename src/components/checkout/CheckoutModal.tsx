@@ -62,10 +62,12 @@ export default function CheckoutModal({
       setLoading(true);
       setErrorMessage(null);
 
-      // 1. Format payload item (termasuk lisensi & extra support dinamis)
+      // 1. Format cart item payload (including license type and optional support add-on)
       const formattedItems = cartItems.map((item) => {
         const rawLicense = item.license_type || 'REGULAR';
-        const licenseType = (rawLicense.toUpperCase() === 'EXTENDED' ? 'EXTENDED' : 'REGULAR') as LicenseType;
+        const licenseType = (
+          rawLicense.toUpperCase() === 'EXTENDED' ? 'EXTENDED' : 'REGULAR'
+        ) as LicenseType;
 
         return {
           product_id: item.product_id,
@@ -77,13 +79,13 @@ export default function CheckoutModal({
         };
       });
 
-      // 2. Ambil kode referral affiliate dari sesi browser jika ada
+      // 2. Retrieve stored affiliate referral code from browser session if available
       const storedAffiliateToken =
         typeof window !== 'undefined'
           ? localStorage.getItem('tmv_affiliate_ref') || localStorage.getItem('affiliate_ref')
           : null;
 
-      // 3. Tembak backend untuk membuat Order Internal
+      // 3. Create internal order record on backend
       const orderPayload = {
         shipping_address: 'Digital Delivery',
         notes: couponCode ? `Checkout via PayPal (Coupon: ${couponCode})` : 'Checkout via PayPal',
@@ -101,17 +103,17 @@ export default function CheckoutModal({
       );
 
       if (!orderResponse || !orderResponse.success || !orderResponse.data) {
-        throw new Error(orderResponse?.message || 'Gagal membuat pesanan di server.');
+        throw new Error(orderResponse?.message || 'Failed to create order on the server.');
       }
 
       const orderData = orderResponse.data as OrderResponseData;
       const orderId = orderData.id;
 
       if (!orderId) {
-        throw new Error('Order ID tidak ditemukan dari server.');
+        throw new Error('Order ID was not returned by the server.');
       }
 
-      // 4. Tembak backend untuk mendapatkan URL sesi PayPal
+      // 4. Request PayPal checkout session URL from backend
       const paymentResponse = await paymentAPI.createPayPalOrder({
         order_id: orderId,
       });
@@ -128,9 +130,9 @@ export default function CheckoutModal({
         }
       }
 
-      throw new Error('Gagal mendapatkan URL pembayaran PayPal dari server.');
+      throw new Error('Failed to retrieve PayPal checkout URL from the server.');
     } catch (error: unknown) {
-      let msg = 'Terjadi kesalahan sistem yang tidak terduga.';
+      let msg = 'An unexpected system error occurred. Please try again.';
       if (error instanceof Error) {
         msg = error.message;
       } else if (typeof error === 'object' && error !== null) {
@@ -156,6 +158,7 @@ export default function CheckoutModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close modal"
             className="absolute right-4 top-4 text-slate-400 hover:text-white font-bold text-lg px-2 py-1 rounded-lg transition cursor-pointer"
           >
             ✕

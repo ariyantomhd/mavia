@@ -38,10 +38,10 @@ export default function DealsGridSection({
         </div>
         <div className="space-y-1">
           <h3 className="text-sm font-extrabold text-slate-800">
-            Tidak Ada Promo yang Cocok dengan Filter
+            No Deals Match Your Filters
           </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Coba atur ulang batas harga maksimum, kata kunci pencarian, atau kategori promo untuk melihat penawaran aktif lainnya.
+            Try adjusting your maximum price limit, search keywords, or deal category to explore other active offers.
           </p>
         </div>
         <button
@@ -50,7 +50,7 @@ export default function DealsGridSection({
           className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition cursor-pointer"
         >
           <RotateCcw className="h-3.5 w-3.5" />
-          <span>Reset Semua Filter</span>
+          <span>Reset All Filters</span>
         </button>
       </div>
     );
@@ -60,7 +60,7 @@ export default function DealsGridSection({
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
       {safeDeals.map((dealItem) => (
         <div key={dealItem.deal_id || dealItem.id} className="relative group">
-          {/* Badge Persentase Diskon dari Tabel Deals */}
+          {/* Discount Percentage Badge */}
           {dealItem.discount_percent > 0 && (
             <div className="absolute top-3 left-3 z-20 bg-rose-600 text-white text-[10px] font-black font-mono uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-md">
               -{dealItem.discount_percent}% • {dealItem.deal_badge}

@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { AlertCircle, X } from 'lucide-react';
 import CartHeader from '@/components/cart/CartHeader';
 import CartEmptyState from '@/components/cart/CartEmptyState';
 import CartItemList, { CartItemDisplay } from '@/components/cart/CartItemList';
@@ -51,6 +52,7 @@ export default function CartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCouponState | null>(null);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
+  const [notification, setNotification] = useState<string | null>(null);
 
   const setCartCount = useAppStore((state) => state.setCartCount);
 
@@ -202,12 +204,14 @@ export default function CartPage() {
       syncCartFromServerResponse(null);
       setAppliedCoupon(null);
       setDiscountAmount(0);
+      setNotification(null);
     } catch (error) {
       console.error('[Clear Cart Error]:', error);
     }
   };
 
   const handleApplyCoupon = async (code: string) => {
+    setNotification(null);
     try {
       const res = await apiCoupon.applyCoupon(code, serverSubtotal);
       if (res.success && res.data) {
@@ -219,17 +223,19 @@ export default function CartPage() {
         });
         setDiscountAmount(Number(res.data.discountAmount ?? res.discountAmount ?? 0));
       } else {
-        alert(res.message || 'Kode kupon tidak valid.');
+        setNotification(res.message || 'Invalid or expired promo code.');
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Gagal memvalidasi kode kupon.';
-      alert(message);
+      const message =
+        error instanceof Error ? error.message : 'Failed to validate promo code. Please try again.';
+      setNotification(message);
     }
   };
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
     setDiscountAmount(0);
+    setNotification(null);
   };
 
   const finalTotal = Number(Math.max(0, serverSubtotal - discountAmount).toFixed(2));
@@ -243,8 +249,8 @@ export default function CartPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 py-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="min-h-screen text-slate-900 pt-8 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <CartHeader
           totalItemsCount={serverTotalItems}
           totalKindsCount={cartItems.length}
@@ -252,9 +258,35 @@ export default function CartPage() {
           onClearCart={handleClearCart}
         />
 
+        {/* Dismissible Inline Error Notification */}
+        {notification && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span>{notification}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNotification(null)}
+              aria-label="Dismiss notification"
+              className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {isLoading ? (
-          <div className="text-center py-20 text-slate-500 text-xs font-bold animate-pulse">
-            Loading cart data from backend server...
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div className="lg:col-span-2 space-y-4">
+              {[1, 2].map((skeleton) => (
+                <div
+                  key={skeleton}
+                  className="h-36 rounded-3xl bg-white/75 border border-slate-200/80 animate-pulse"
+                />
+              ))}
+            </div>
+            <div className="h-80 rounded-3xl bg-white/75 border border-slate-200/80 animate-pulse" />
           </div>
         ) : cartItems.length === 0 ? (
           <CartEmptyState />
