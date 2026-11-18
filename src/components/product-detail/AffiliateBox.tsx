@@ -3,7 +3,22 @@
 
 import React, { useState } from 'react';
 import { Copy, Check, Share2, Loader2, Sparkles } from 'lucide-react';
-import { affiliateProductAPI, CampaignKitData } from '@/services/apiAffiliateProduct';
+import { z } from 'zod';
+import {
+  affiliateProductAPI,
+  CampaignKitData,
+} from '@/services/apiAffiliateProduct';
+import { sanitizeText } from '@/utils/sanitize';
+
+const affiliateIdSchema = z
+  .string()
+  .trim()
+  .min(3, 'Affiliate ID must be at least 3 characters long.')
+  .max(40, 'Affiliate ID cannot exceed 40 characters.')
+  .regex(
+    /^[a-zA-Z0-9_-]+$/,
+    'Affiliate ID may only contain letters, numbers, hyphens (-), or underscores (_).'
+  );
 
 interface AffiliateBoxProps {
   slug: string;
@@ -34,39 +49,59 @@ export default function AffiliateBox({
     setGeneratedLink('');
     setCampaignKit(null);
 
-    const trimmedInput = affiliateInput.trim().replace(/[^a-zA-Z0-9_-]/g, '');
-    if (!trimmedInput) {
-      setErrorMessage('Please enter a valid Affiliate ID.');
+    // 1. Sanitize user text input before Zod validation
+    const sanitizedInput = sanitizeText(affiliateInput.trim());
+    const parsed = affiliateIdSchema.safeParse(sanitizedInput);
+
+    if (!parsed.success) {
+      setErrorMessage(
+        parsed.error.issues[0]?.message || 'Please enter a valid Affiliate ID.'
+      );
       return;
     }
 
-    const formattedToken = trimmedInput.toLowerCase().startsWith('tmv-')
-      ? trimmedInput.toLowerCase()
-      : `tmv-${trimmedInput.toLowerCase()}`;
+    const normalizedId = parsed.data.toLowerCase();
+    const formattedToken = normalizedId.startsWith('tmv-')
+      ? normalizedId
+      : `tmv-${normalizedId}`;
+
+    // Ensure product slug is safe before sending to API or building URL
+    const safeSlug = sanitizeText(slug.trim()).replace(/[^a-zA-Z0-9_-]/g, '');
+    if (!safeSlug) {
+      setErrorMessage('Invalid product reference.');
+      return;
+    }
 
     try {
       setIsLoading(true);
 
       const response = await affiliateProductAPI.trackAndGetAffiliateUrl({
-        productId: slug,
+        productId: safeSlug,
         userAffiliateId: formattedToken,
       });
 
       const resolvedRate = response?.data?.commission_rate ?? commissionRate;
-      const resolvedCode = response?.data?.affiliate_code ?? formattedToken;
+      const rawResolvedCode = response?.data?.affiliate_code ?? formattedToken;
+      const safeResolvedCode = sanitizeText(String(rawResolvedCode)).replace(
+        /[^a-zA-Z0-9_-]/g,
+        ''
+      );
 
       setActiveRate(resolvedRate);
       setCampaignKit(response?.data?.campaign_kit ?? null);
 
-      const trackingUrl = `${window.location.origin}/products/${slug}?ref=${resolvedCode}`;
+      const trackingUrl = `${window.location.origin}/products/${encodeURIComponent(
+        safeSlug
+      )}?ref=${encodeURIComponent(safeResolvedCode || formattedToken)}`;
       setGeneratedLink(trackingUrl);
 
       await navigator.clipboard.writeText(trackingUrl);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 3000);
     } catch (err: unknown) {
+      const errObj = err as { message?: string };
       const errorMsg =
-        err instanceof Error ? err.message : 'Invalid or unapproved Affiliate ID.';
+        errObj?.message || 'Invalid or unapproved Affiliate ID.';
       setErrorMessage(errorMsg);
     } finally {
       setIsLoading(false);
@@ -86,18 +121,27 @@ export default function AffiliateBox({
       </div>
 
       <p className="text-[11px] text-slate-500 leading-relaxed">
-        Enter your approved Affiliate ID to generate a secure tracking link formatted with the{' '}
-        <strong>tmv-</strong> prefix and earn a <strong>{activeRate}%</strong> commission per sale.
+        Enter your approved Affiliate ID to generate a secure tracking link
+        formatted with the <strong>tmv-</strong> prefix and earn a{' '}
+        <strong>{activeRate}%</strong> commission per sale.
       </p>
 
-      <form onSubmit={handleGenerateLink} className="space-y-2.5">
+      <form onSubmit={handleGenerateLink} noValidate className="space-y-2.5">
         <div>
           <input
             type="text"
+            maxLength={40}
             value={affiliateInput}
-            onChange={(e) => setAffiliateInput(e.target.value)}
+            onChange={(e) => {
+              setAffiliateInput(e.target.value);
+              if (errorMessage) setErrorMessage('');
+            }}
             placeholder="e.g. user123 or tmv-user123"
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-orange-500 font-mono rounded-xl"
+            className={`w-full px-3.5 py-2.5 bg-slate-50 border text-xs text-slate-800 focus:outline-none font-mono rounded-xl transition-colors ${
+              errorMessage
+                ? 'border-rose-400 focus:border-rose-500'
+                : 'border-slate-200 focus:border-orange-500'
+            }`}
             disabled={isLoading}
           />
           {errorMessage && (
@@ -126,31 +170,36 @@ export default function AffiliateBox({
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-emerald-600 font-bold flex items-center space-x-1">
               {isCopied && <Check className="h-3 w-3" />}
-              <span>{isCopied ? 'Link Copied to Clipboard!' : 'Affiliate Link Ready'}</span>
+              <span>
+                {isCopied
+                  ? 'Link Copied to Clipboard!'
+                  : 'Affiliate Link Ready'}
+              </span>
             </span>
           </div>
           <code className="text-[10px] font-mono break-all text-slate-800 block bg-white p-2 border border-slate-200 select-all rounded-lg">
             {generatedLink}
           </code>
 
-          {campaignKit && (campaignKit.promo_headline || campaignKit.promo_copy_en) && (
-            <div className="pt-2 border-t border-slate-200 space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1 uppercase">
-                <Sparkles className="h-3 w-3 text-orange-500" />
-                <span>Campaign Kit Copy</span>
-              </span>
-              {campaignKit.promo_headline && (
-                <p className="text-[11px] font-semibold text-slate-800">
-                  {campaignKit.promo_headline}
-                </p>
-              )}
-              {campaignKit.promo_copy_en && (
-                <p className="text-[10px] text-slate-600 bg-white p-2 rounded border border-slate-200">
-                  {campaignKit.promo_copy_en}
-                </p>
-              )}
-            </div>
-          )}
+          {campaignKit &&
+            (campaignKit.promo_headline || campaignKit.promo_copy_en) && (
+              <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1 uppercase">
+                  <Sparkles className="h-3 w-3 text-orange-500" />
+                  <span>Campaign Kit Copy</span>
+                </span>
+                {campaignKit.promo_headline && (
+                  <p className="text-[11px] font-semibold text-slate-800">
+                    {campaignKit.promo_headline}
+                  </p>
+                )}
+                {campaignKit.promo_copy_en && (
+                  <p className="text-[10px] text-slate-600 bg-white p-2 rounded border border-slate-200">
+                    {campaignKit.promo_copy_en}
+                  </p>
+                )}
+              </div>
+            )}
         </div>
       )}
     </div>

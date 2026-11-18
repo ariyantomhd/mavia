@@ -7,31 +7,46 @@ import { ChevronDown, Box, FileText, Smartphone, LayoutGrid, Code2 } from 'lucid
 
 export default function NavbarLinks() {
   return (
-    <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-200">
+    <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-200">
       {/* 1. Browse Dropdown */}
       <div className="relative group py-2">
-        <button type="button" className="flex items-center gap-1 hover:text-indigo-400 transition-colors cursor-pointer">
+        <button
+          type="button"
+          className="flex items-center gap-1 hover:text-indigo-400 transition-colors cursor-pointer"
+        >
           <span>Browse</span>
           <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:rotate-180 transition-transform" />
         </button>
 
         <div className="absolute top-full left-0 w-56 bg-[#0F1035] border border-slate-800 rounded-2xl shadow-xl py-3 hidden group-hover:block z-50">
-          <Link href="/products?sort=trending" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400">
+          <Link
+            href="/products?sort=trending"
+            className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400"
+          >
             🔥 Trending Now
           </Link>
-          <Link href="/products?sort=bestseller" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400">
+          <Link
+            href="/products?sort=bestseller"
+            className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400"
+          >
             ⭐ Best Sellers
           </Link>
-          <Link href="/products?filter=new" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400">
+          <Link
+            href="/products?filter=new"
+            className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400"
+          >
             ✨ New Releases
           </Link>
-          <Link href="/deals" className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400">
+          <Link
+            href="/deals"
+            className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800/80 hover:text-indigo-400"
+          >
             ⚡ Special Deals
           </Link>
         </div>
       </div>
 
-      {/* 2. Categories Dropdown (Diubah menggunakan group-hover murni tanpa jeda state) */}
+      {/* 2. Categories Dropdown */}
       <div className="relative group py-2">
         <button
           type="button"
@@ -87,7 +102,7 @@ export default function NavbarLinks() {
           </Link>
 
           <Link
-            href="/products?category=custom-development"
+            href="/custom-development"
             className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2.5 cursor-pointer"
           >
             <Code2 className="w-4 h-4 text-rose-500 shrink-0" />
@@ -101,6 +116,9 @@ export default function NavbarLinks() {
 
       <Link href="/products" className="hover:text-indigo-400 transition-colors">
         All Products
+      </Link>
+      <Link href="/custom-development" className="hover:text-indigo-400 transition-colors">
+        Custom Dev
       </Link>
       <Link href="/deals" className="hover:text-indigo-400 transition-colors">
         Deals

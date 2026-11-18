@@ -1,10 +1,9 @@
 // src/services/wrapperAPI.ts
-import axios, { 
-  AxiosInstance, 
-  AxiosRequestConfig, 
-  AxiosResponse, 
-  InternalAxiosRequestConfig, 
-  AxiosError 
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosError,
 } from 'axios';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -29,36 +28,25 @@ function isOnProtectedRoute(): boolean {
 class ApiWrapper {
   private client: AxiosInstance;
 
-  constructor(baseURL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api') {
+  constructor(
+    baseURL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+  ) {
     this.client = axios.create({
       baseURL,
       timeout: 40000,
+      withCredentials: true, // Send and receive HttpOnly session cookies automatically
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    // 1. Request Interceptor: Otomatis menyematkan Bearer token dari localStorage jika ada
-    this.client.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        if (typeof window !== 'undefined') {
-          const token = localStorage.getItem('token');
-          if (token && config.headers) {
-            config.headers.Authorization = `Bearer ${token}`;
-          }
-        }
-        return config;
-      },
-      (error: AxiosError) => Promise.reject(error)
-    );
-
-    // 2. Response Interceptor: Menangani data respons dan standarisasi error global agar tidak kosong {}
+    // Response Interceptor: Standardize API payloads and handle 401 session expiration
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response.data,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
-          const hadToken =
-            typeof window !== 'undefined' && Boolean(localStorage.getItem('token'));
+          const storeState = useAppStore.getState();
+          const wasAuthenticated = Boolean(storeState.currentUser?.id);
 
           if (typeof window !== 'undefined') {
             localStorage.removeItem('token');
@@ -69,11 +57,16 @@ class ApiWrapper {
           const isAuthEndpoint =
             requestUrl.includes('/auth/login') ||
             requestUrl.includes('/auth/register') ||
-            requestUrl.includes('/auth/me');
+            requestUrl.includes('/auth/me') ||
+            requestUrl.includes('/auth/signout');
 
-          // Tampilkan modal Session Expired jika sebelumnya ada sesi aktif dan berada di rute terproteksi
-          if (hadToken && !isAuthEndpoint && isOnProtectedRoute()) {
-            useAppStore.getState().setSessionExpired(true);
+          if (wasAuthenticated) {
+            storeState.logout();
+          }
+
+          // Trigger Session Expired modal if an active user encounters 401 on a protected route
+          if (wasAuthenticated && !isAuthEndpoint && isOnProtectedRoute()) {
+            storeState.setSessionExpired(true);
           }
         }
 
@@ -101,7 +94,10 @@ class ApiWrapper {
           data: responseBody?.data || null,
         };
 
-        console.error('[API Error Detail]:', errorResponse);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('[API Error Detail]:', errorResponse);
+        }
+
         return Promise.reject(errorResponse);
       }
     );

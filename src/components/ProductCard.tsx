@@ -8,36 +8,38 @@ import Image from "next/image";
 import { Star, ShoppingCart, Check } from "lucide-react";
 import { Product } from "@/types/product";
 import { TechIcon } from "@/components/TechIcons";
-import AuthToast from "@/components/AuthToast"; // <-- Import Notifikasi Baru
+import AuthToast from "@/components/AuthToast";
 
 import { apiCart } from "@/services/apicart";
 import { useAppStore } from "@/store/useAppStore";
 
 interface ProductCardProps {
-  key?: string | number;
-  product?: Product;
+  product: Product;
   className?: string;
   onAddToCart?: (productId: string) => void;
-  // Opsional: Callback jika komponen induk ingin menangani pembukaan modal login
-  onRequestLogin?: () => void; 
+  onRequestLogin?: () => void;
 }
 
-export default function ProductCard({ product, className = "", onAddToCart, onRequestLogin }: ProductCardProps) {
+export default function ProductCard({
+  product,
+  className = "",
+  onAddToCart,
+  onRequestLogin,
+}: ProductCardProps) {
   const router = useRouter();
   const [isAdded, setIsAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // State untuk mengontrol visibilitas AuthToast
+  const [cartError, setCartError] = useState<string | null>(null);
   const [showAuthToast, setShowAuthToast] = useState(false);
 
   const incrementCart = useAppStore((state) => state.incrementCart);
   const isLoggedIn = Boolean(useAppStore((state) => state.currentUser?.id));
 
-  const title = product?.title || "PixelCraft Enterprise Design System";
-  const slug = product?.slug || product?.id || "placeholder-product";
-  const livePreviewUrl = product?.live_preview_url;
-  const productId = product?.id || "placeholder-id";
+  if (!product) return null;
+
+  const { title, id: productId, live_preview_url: livePreviewUrl } = product;
+  const slug = product.slug || product.id;
 
   const handleCardClick = () => {
     router.push(`/products/${slug}`);
@@ -45,15 +47,15 @@ export default function ProductCard({ product, className = "", onAddToCart, onRe
 
   const handleCartClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    // Jika belum login, tampilkan pop-up AuthToast yang elegan
+    setCartError(null);
+
     if (!isLoggedIn) {
       setShowAuthToast(true);
       return;
     }
 
     if (isLoading) return;
-    
+
     try {
       setIsLoading(true);
 
@@ -70,13 +72,14 @@ export default function ProductCard({ product, className = "", onAddToCart, onRe
           setTimeout(() => setIsAdded(false), 2000);
           incrementCart();
         } else {
-          // Tetap gunakan alert sederhana jika terjadi error logika dari backend (misal: stok habis)
-          alert(response.message || "Gagal menambahkan produk ke keranjang.");
+          setCartError(response.message || "Failed to add item to cart.");
+          setTimeout(() => setCartError(null), 3500);
         }
       }
     } catch (error: unknown) {
       console.error("[Cart Error]:", error);
-      alert("Terjadi kesalahan sistem saat menghubungi server.");
+      setCartError("Unable to connect to server.");
+      setTimeout(() => setCartError(null), 3500);
     } finally {
       setIsLoading(false);
     }
@@ -85,45 +88,41 @@ export default function ProductCard({ product, className = "", onAddToCart, onRe
   const handleDemoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (livePreviewUrl) {
-      window.open(livePreviewUrl, '_blank', 'noopener,noreferrer');
+      window.open(livePreviewUrl, "_blank", "noopener,noreferrer");
     } else {
       handleCardClick();
     }
   };
 
-  // ... (Sisa logika fallback gambar dan perhitungan harga tetap sama) ...
-  const fallbackImage = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-  const prodAny = product as Record<string, unknown> | undefined;
-  const galleryImagesProp = prodAny?.gallery_images as string[] | undefined;
-  const galleryProp = prodAny?.gallery as unknown[] | undefined;
+  const prodAny = product as unknown as Record<string, unknown>;
+  const galleryImagesProp = prodAny.gallery_images as string[] | undefined;
 
-  const firstGalleryImage = Array.isArray(galleryImagesProp) && galleryImagesProp.length > 0
-    ? galleryImagesProp[0]
-    : (Array.isArray(galleryProp) && galleryProp.length > 0 
-        ? (typeof galleryProp[0] === 'string' ? galleryProp[0] : (galleryProp[0] as Record<string, unknown>)?.image_url as string) 
-        : null);
+  const firstGalleryImage =
+    Array.isArray(galleryImagesProp) && galleryImagesProp.length > 0
+      ? galleryImagesProp[0]
+      : Array.isArray(product.gallery) && product.gallery.length > 0
+        ? product.gallery[0].image_url
+        : product.images_url || null;
 
-  const rawImage = firstGalleryImage;
-  const imageSource = (!imgError && rawImage) ? rawImage : fallbackImage;
-  
-  const techStackProp = prodAny?.tech_stack as string[] | undefined;
-  const tagsProp = prodAny?.tags as string[] | undefined;
-  const frameworkVersionProp = prodAny?.framework_version as string | undefined;
+  const hasValidImage = Boolean(!imgError && firstGalleryImage);
 
-  const primaryTech = (techStackProp && techStackProp[0]) || frameworkVersionProp || (tagsProp && tagsProp[0]) || "React";
+  const primaryTech =
+    (product.tech_stack && product.tech_stack[0]) ||
+    product.framework_version ||
+    (product.tags && product.tags[0]) ||
+    "React";
 
-  const discountPriceVal = prodAny?.discount_price as number | null | undefined;
-  const regularPriceVal = prodAny?.regular_price as number | undefined;
-
-  const activePrice = discountPriceVal !== null && discountPriceVal !== undefined 
-    ? discountPriceVal 
-    : (regularPriceVal ?? 0);
+  const activePrice =
+    product.discount_price !== null && product.discount_price !== undefined
+      ? product.discount_price
+      : (product.regular_price ?? 0);
 
   const priceFormatted = activePrice > 0 ? activePrice.toFixed(0) : "FREE";
+  const ratingValue = Math.round(product.rating_avg || 0);
 
   return (
     <>
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -132,11 +131,10 @@ export default function ProductCard({ product, className = "", onAddToCart, onRe
         onClick={handleCardClick}
       >
         <div className="relative bg-white border border-slate-200 rounded-none flex flex-col h-full overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
-          
           <div className="relative w-full aspect-16/10 bg-slate-100 overflow-hidden border-b border-slate-200 shrink-0 flex items-center justify-center">
-            {rawImage ? (
-              <Image 
-                src={imageSource} 
+            {hasValidImage && firstGalleryImage ? (
+              <Image
+                src={firstGalleryImage}
                 alt={title}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -146,30 +144,41 @@ export default function ProductCard({ product, className = "", onAddToCart, onRe
               />
             ) : (
               <span className="text-xs font-semibold text-slate-400 px-2 text-center">
-                [ Belum ada gambar galeri ]
+                No preview image available
               </span>
             )}
 
             <div className="absolute top-2.5 left-2.5 bg-white/95 text-slate-900 border border-slate-200 px-2.5 py-0.5 font-extrabold text-[12px] shadow-xs backdrop-blur-xs z-10">
               {priceFormatted === "FREE" ? "FREE" : `$${priceFormatted}`}
             </div>
-        
-            <button 
+
+            <button
+              type="button"
               onClick={handleCartClick}
               disabled={isLoading}
               title={isAdded ? "Added to Cart" : "Add to Cart"}
               className={`absolute top-2.5 right-2.5 w-7 h-7 ${
-                isAdded 
-                  ? "bg-green-500 border-green-600 text-white" 
+                isAdded
+                  ? "bg-green-500 border-green-600 text-white"
                   : "bg-white/95 text-slate-700 hover:bg-slate-100 border-slate-200"
               } ${isLoading ? "opacity-50 cursor-not-allowed" : ""} backdrop-blur-xs border flex items-center justify-center hover:scale-110 transition-transform shadow-xs rounded-none z-10`}
             >
               {isAdded ? (
                 <Check size={13} strokeWidth={2.5} />
               ) : (
-                <ShoppingCart size={13} strokeWidth={2.5} className={isLoading ? "animate-pulse" : ""} />
+                <ShoppingCart
+                  size={13}
+                  strokeWidth={2.5}
+                  className={isLoading ? "animate-pulse" : ""}
+                />
               )}
             </button>
+
+            {cartError && (
+              <div className="absolute inset-x-2 bottom-2 z-20 bg-rose-600/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-md backdrop-blur-xs">
+                {cartError}
+              </div>
+            )}
           </div>
 
           <div className="p-3.5 flex-1 flex flex-col justify-between bg-white">
@@ -178,50 +187,58 @@ export default function ProductCard({ product, className = "", onAddToCart, onRe
                 {title}
               </h3>
             </div>
-            <div>
+            <div className="flex items-center gap-1.5">
               <div className="flex items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} size={12} className="fill-slate-300 text-slate-300" />
+                  <Star
+                    key={s}
+                    size={12}
+                    className={
+                      s <= ratingValue
+                        ? "fill-amber-400 text-amber-400"
+                        : "fill-slate-200 text-slate-200"
+                    }
+                  />
                 ))}
               </div>
+              {product.reviews_count > 0 && (
+                <span className="text-[11px] font-medium text-slate-400">
+                  ({product.reviews_count})
+                </span>
+              )}
             </div>
           </div>
 
           <div className="px-3.5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2">
             <div className="flex items-center shrink-0">
-              <span 
+              <span
                 title={primaryTech}
                 className="w-7 h-7 rounded-none bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-blue-600 hover:border-blue-400 transition-colors shadow-2xs"
               >
                 <TechIcon name={primaryTech} size={15} />
               </span>
             </div>
-            <button 
+            <button
+              type="button"
               onClick={handleDemoClick}
               className="bg-[#ffa33b] hover:bg-orange-600 text-white py-1.5 px-3 font-black text-[9px] uppercase tracking-widest rounded-none flex items-center justify-center transition-colors shadow-xs shrink-0"
             >
               DEMO LIVE
             </button>
           </div>
-
         </div>
       </motion.div>
 
-      {/* Render Notifikasi Pop-up */}
-      <AuthToast 
-        isVisible={showAuthToast} 
-        onClose={() => setShowAuthToast(false)} 
+      <AuthToast
+        isVisible={showAuthToast}
+        onClose={() => setShowAuthToast(false)}
         onLoginClick={() => {
-          // Logika untuk membuka modal login.
-          // Jika Navbar memiliki state modal global, abang bisa memicu event kustom,
-          // atau mengarahkan ke halaman dengan query parameter seperti ini:
           if (onRequestLogin) {
             onRequestLogin();
           } else {
-            // Fallback sederhana jika tidak ada callback
-            alert("Harap buka menu login di Navbar.");
+            window.dispatchEvent(new Event("open-auth-modal"));
           }
-        }} 
+        }}
       />
     </>
   );

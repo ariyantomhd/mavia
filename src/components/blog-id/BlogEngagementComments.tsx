@@ -3,7 +3,16 @@
 
 import React, { useState } from 'react';
 import { MessageSquare, Send, Share2, ThumbsUp } from 'lucide-react';
+import { z } from 'zod';
 import { CommentItem, INITIAL_COMMENTS } from '@/types/blog-id';
+import { sanitizeText } from '@/utils/sanitize';
+import { useAppStore } from '@/store/useAppStore';
+
+const commentSchema = z
+  .string()
+  .trim()
+  .min(2, 'Comment must be at least 2 characters.')
+  .max(500, 'Comment cannot exceed 500 characters.');
 
 interface BlogEngagementCommentsProps {
   initialLikes: number;
@@ -16,9 +25,11 @@ export default function BlogEngagementComments({
   shareCount,
   onQuickShare,
 }: BlogEngagementCommentsProps) {
+  const currentUser = useAppStore((state) => state.currentUser);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(initialLikes);
   const [commentInput, setCommentInput] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [comments, setComments] = useState<CommentItem[]>(INITIAL_COMMENTS);
 
   const handleToggleLike = () => {
@@ -31,12 +42,21 @@ export default function BlogEngagementComments({
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentInput.trim()) return;
+    setErrorMsg(null);
+
+    const sanitized = sanitizeText(commentInput.trim());
+    const parsed = commentSchema.safeParse(sanitized);
+
+    if (!parsed.success) {
+      setErrorMsg(parsed.error.issues[0]?.message || 'Invalid comment.');
+      return;
+    }
+
     setComments((prev) => [
       {
         id: Date.now(),
-        author: 'Guest Reader',
-        text: commentInput.trim(),
+        author: currentUser?.username || 'Community Reader',
+        text: parsed.data,
         time: 'Just now',
       },
       ...prev,
@@ -76,25 +96,30 @@ export default function BlogEngagementComments({
         </div>
 
         {/* Inline Comment Form */}
-        <form
-          onSubmit={handleCommentSubmit}
-          className="flex items-center gap-2 flex-1 max-w-md"
-        >
-          <input
-            type="text"
-            value={commentInput}
-            onChange={(e) => setCommentInput(e.target.value)}
-            placeholder="Write a comment..."
-            className="w-full px-4 py-2 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors"
-          />
-          <button
-            type="submit"
-            aria-label="Post comment"
-            className="w-8 h-8 rounded-full bg-slate-900 hover:bg-indigo-600 text-white flex items-center justify-center shrink-0 transition-colors cursor-pointer"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </button>
-        </form>
+        <div className="flex-1 max-w-md">
+          <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={commentInput}
+              onChange={(e) => {
+                setCommentInput(e.target.value);
+                if (errorMsg) setErrorMsg(null);
+              }}
+              placeholder="Write a comment..."
+              className="w-full px-4 py-2 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors"
+            />
+            <button
+              type="submit"
+              aria-label="Post comment"
+              className="w-8 h-8 rounded-full bg-slate-900 hover:bg-indigo-600 text-white flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+            >
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          </form>
+          {errorMsg && (
+            <p className="mt-1 pl-4 text-[11px] font-medium text-rose-600">{errorMsg}</p>
+          )}
+        </div>
       </div>
 
       {/* Recent Comments List */}
@@ -106,14 +131,10 @@ export default function BlogEngagementComments({
               className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/60"
             >
               <div className="flex items-center justify-between text-[11px] mb-1">
-                <span className="font-bold text-slate-800">
-                  {comment.author}
-                </span>
+                <span className="font-bold text-slate-800">{comment.author}</span>
                 <span className="text-slate-400">{comment.time}</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                {comment.text}
-              </p>
+              <p className="text-xs text-slate-600 leading-relaxed">{comment.text}</p>
             </div>
           ))}
         </div>

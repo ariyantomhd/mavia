@@ -23,7 +23,7 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-zinc-900 selection:bg-zinc-900 selection:text-white">
+    <div className="min-h-screen  text-zinc-900 selection:bg-zinc-900 selection:text-white">
       {/* 1. Hero Section */}
       <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 bg-white border-b border-zinc-200/70">
         <div className="max-w-4xl mx-auto px-6 text-center">

@@ -12,37 +12,44 @@ export interface User {
 
 interface AppState {
   currentUser: User | null;
-  token: string | null;
   cartCount: number;
-  isSessionExpired: boolean; // State penanda sesi habis
-  login: (user: User, token: string) => void;
+  isSessionExpired: boolean; // Flag indicating active session has expired
+  setCurrentUser: (user: User | null) => void;
+  login: (user: User, token?: string) => void;
   logout: () => void;
   setCartCount: (count: number) => void;
   incrementCart: () => void;
   clearCart: () => void;
-  setSessionExpired: (expired: boolean) => void; // Fungsi pemicu
+  setSessionExpired: (expired: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       currentUser: null,
-      token: null,
       cartCount: 0,
       isSessionExpired: false,
-      login: (user: User, token: string) => {
+
+      setCurrentUser: (user: User | null) =>
+        set({ currentUser: user, isSessionExpired: false }),
+
+      login: (user: User) => {
+        // Clean up any legacy tokens from localStorage when migrating to HttpOnly cookies
         if (typeof window !== 'undefined') {
-          localStorage.setItem('token', token);
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
         }
-        set({ currentUser: user, token, isSessionExpired: false });
+        set({ currentUser: user, isSessionExpired: false });
       },
+
       logout: () => {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
           localStorage.removeItem('refresh_token');
         }
-        set({ currentUser: null, token: null, cartCount: 0, isSessionExpired: false });
+        set({ currentUser: null, cartCount: 0, isSessionExpired: false });
       },
+
       setCartCount: (count: number) => set({ cartCount: count }),
       incrementCart: () => set((state: AppState) => ({ cartCount: state.cartCount + 1 })),
       clearCart: () => set({ cartCount: 0 }),
@@ -50,10 +57,9 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'tmv-market-storage',
-      // Hanya simpan data akun & keranjang ke localStorage; jangan simpan flag modal sementara
+      // Persist only non-sensitive UI profile metadata & cart badge count
       partialize: (state) => ({
         currentUser: state.currentUser,
-        token: state.token,
         cartCount: state.cartCount,
       }),
     }

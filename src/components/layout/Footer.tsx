@@ -97,7 +97,7 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/partnership" className="hover:text-white transition block leading-snug">
+                <Link href="/affiliate" className="hover:text-white transition block leading-snug">
                   Partnership
                 </Link>
               </li>

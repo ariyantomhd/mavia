@@ -10,7 +10,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 
-// Import komponen tab yang sudah dipecah
+// Tab components
 import { OverviewTab } from '@/components/dashboard/tabs/OverviewTab';
 import { MyOrdersTab } from '@/components/dashboard/tabs/MyOrdersTab';
 import { DownloadsTab } from '@/components/dashboard/tabs/DownloadsTab';
@@ -20,6 +20,7 @@ import { SettingsTab } from '@/components/dashboard/tabs/SettingsTab';
 export default function DashboardPage() {
   const router = useRouter();
   const logout = useAppStore((state) => state.logout);
+  const setCurrentUser = useAppStore((state) => state.setCurrentUser);
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
@@ -28,39 +29,50 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const initDashboard = async () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-      if (!token) {
-        logout();
-        router.replace('/');
-        return;
-      }
-
       try {
         setLoading(true);
+        // Verify active HttpOnly cookie session directly against backend
         const response = await apiDashboard.getDashboardData();
 
         if (response.success && response.data) {
           setDashboardData(response.data);
+
+          // Sync authenticated user profile into global Zustand store
+          if (response.data.user) {
+            setCurrentUser({
+              id: response.data.user.id,
+              username: response.data.user.username,
+              email: response.data.user.email,
+              role: response.data.user.role,
+              avatar_url: response.data.user.avatar_url,
+            });
+          }
+
+          // Clean up ?auth=success query parameter after OAuth redirect
+          if (
+            typeof window !== 'undefined' &&
+            window.location.search.includes('auth=success')
+          ) {
+            window.history.replaceState({}, '', '/dashboard');
+          }
+
           setLoading(false);
         } else {
-          localStorage.removeItem('token');
           logout();
-          router.replace('/');
+          router.replace('/login');
         }
       } catch (error: unknown) {
-        const remainingToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        const errObj = error as { message?: string };
+        const errObj = error as { status?: number; message?: string };
         const message = errObj?.message || 'Server error occurred.';
 
         if (
-          !remainingToken ||
+          errObj?.status === 401 ||
           message.toLowerCase().includes('unauthorized') ||
-          message.toLowerCase().includes('token')
+          message.toLowerCase().includes('authentication') ||
+          message.toLowerCase().includes('session')
         ) {
-          localStorage.removeItem('token');
           logout();
-          router.replace('/');
+          router.replace('/login');
           return;
         }
 
@@ -70,7 +82,7 @@ export default function DashboardPage() {
     };
 
     initDashboard();
-  }, [router, logout]);
+  }, [router, logout, setCurrentUser]);
 
   // Loading State
   if (loading || (!dashboardData && !errorMessage)) {
@@ -91,6 +103,7 @@ export default function DashboardPage() {
         <div className="bg-white border border-red-200 p-8 rounded-2xl shadow-sm text-center max-w-md">
           <p className="text-red-600 font-semibold mb-4 text-sm">{errorMessage}</p>
           <button
+            type="button"
             onClick={() => window.location.reload()}
             className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition shadow-sm cursor-pointer"
           >
@@ -106,23 +119,19 @@ export default function DashboardPage() {
   const recentOrders = dashboardData?.recent_orders || [];
 
   return (
-    // Dihapus bg-slate-50 agar memakai warna global
     <div className="min-h-screen text-slate-900 flex flex-col md:flex-row">
       <DashboardSidebar activeTab={activeTab} onSelectTab={setActiveTab} />
 
       <main className="flex-1 py-8 px-6 lg:px-10 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-8">
-          
           <DashboardHeader user={user} />
 
-          {/* Render Komponen Berdasarkan Tab Aktif */}
+          {/* Render Active Tab Content */}
           {activeTab === 'dashboard' && <OverviewTab stats={stats} recentOrders={recentOrders} />}
           {activeTab === 'orders' && <MyOrdersTab orders={recentOrders} />}
           {activeTab === 'downloads' && <DownloadsTab orders={recentOrders} />}
           {activeTab === 'wishlist' && <WishlistTab />}
-          {/* user || undefined memastikan tidak ada error null */}
           {activeTab === 'settings' && <SettingsTab user={user || undefined} />}
-
         </div>
       </main>
     </div>

@@ -81,9 +81,9 @@ export default function HomePage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 -mt-4 sm:-mt-6 pb-16 relative z-10">
         <LandingSections
-          featured={featuredProducts.slice(0, 4)}
-          trending={trendingProducts.slice(0, 3)}
-          newArrivals={newArrivalsProducts.slice(0, 3)}
+          featured={featuredProducts.slice(0, 8)}
+          trending={trendingProducts.slice(0, 5)}
+          newArrivals={newArrivalsProducts.slice(0, 5)}
           loading={isLoading}
         />
       </div>

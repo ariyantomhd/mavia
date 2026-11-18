@@ -3,9 +3,30 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Star, CheckCircle2, ShieldCheck, Send, MessageSquareReply, LogIn } from 'lucide-react';
+import {
+  Star,
+  CheckCircle2,
+  ShieldCheck,
+  Send,
+  MessageSquareReply,
+  LogIn,
+  Lock,
+  ShoppingBag,
+} from 'lucide-react';
+import { z } from 'zod';
 import { productAPI, ProductReviewItem } from '@/services/apiProducts';
 import { useAppStore } from '@/store/useAppStore';
+import { sanitizeText } from '@/utils/sanitize';
+import { api } from '@/services/wrapperAPI';
+
+const reviewInputSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z
+    .string()
+    .trim()
+    .min(5, 'Review comment must be at least 5 characters long.')
+    .max(1000, 'Review comment cannot exceed 1,000 characters.'),
+});
 
 interface ProductTabsProps {
   productId?: string;
@@ -16,6 +37,7 @@ interface ProductTabsProps {
   version?: string;
   createdAt?: string;
   updatedAt?: string;
+  hasPurchased?: boolean;
 }
 
 export default function ProductTabs({
@@ -27,16 +49,36 @@ export default function ProductTabs({
   version = '1.0.0',
   createdAt,
   updatedAt,
+  hasPurchased: initialHasPurchased,
 }: ProductTabsProps) {
   const queryClient = useQueryClient();
   const currentUser = useAppStore((state) => state.currentUser);
   const [activeTab, setActiveTab] = useState<'desc' | 'features' | 'changelog' | 'reviews'>('desc');
 
-  // State form ulasan baru
+  // New review form states
   const [selectedRating, setSelectedRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [comment, setComment] = useState<string>('');
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Check whether the authenticated user has purchased this product
+  const { data: purchaseEligibility, isLoading: isCheckingPurchase } = useQuery({
+    queryKey: ['product-purchase-check', productId, currentUser?.id],
+    queryFn: async () => {
+      if (typeof initialHasPurchased === 'boolean') return initialHasPurchased;
+      try {
+        const res = await api.get<{ has_purchased?: boolean }>(
+          `/products/${productId}/check-purchase`
+        );
+        return Boolean(res?.has_purchased);
+      } catch {
+        return false;
+      }
+    },
+    enabled: Boolean(productId && currentUser?.id),
+  });
+
+  const canWriteReview = Boolean(currentUser && (initialHasPurchased || purchaseEligibility));
 
   const { data: reviewsSummary, isLoading: isLoadingReviews } = useQuery({
     queryKey: ['product-reviews', productId],
@@ -49,26 +91,27 @@ export default function ProductTabs({
   const reviewItems: ProductReviewItem[] = reviewsSummary?.reviews ?? [];
 
   const submitReviewMutation = useMutation({
-    mutationFn: () =>
-      productAPI.submitProductReview(productId!, {
-        rating: selectedRating,
-        comment: comment.trim(),
-      }),
+    mutationFn: (validatedPayload: { rating: number; comment: string }) =>
+      productAPI.submitProductReview(productId!, validatedPayload),
     onSuccess: (res) => {
       setComment('');
       setSelectedRating(5);
       setFeedbackMsg({
         type: 'success',
-        text: res?.message || 'Terima kasih! Ulasan Anda berhasil dikirim.',
+        text: res?.message || 'Thank you! Your verified review has been published.',
       });
       queryClient.invalidateQueries({ queryKey: ['product-reviews', productId] });
+      queryClient.invalidateQueries({ queryKey: ['product-purchase-check', productId, currentUser?.id] });
       queryClient.invalidateQueries({ queryKey: ['product'] });
     },
     onError: (err: unknown) => {
       const errObj = err as { message?: string; error?: { details?: string } };
       setFeedbackMsg({
         type: 'error',
-        text: errObj?.error?.details || errObj?.message || 'Gagal mengirim ulasan. Pastikan Anda sudah login.',
+        text:
+          errObj?.error?.details ||
+          errObj?.message ||
+          'Only verified buyers who have purchased this product can submit a review.',
       });
     },
   });
@@ -79,24 +122,39 @@ export default function ProductTabs({
 
     if (!currentUser) {
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('open-auth-modal', { detail: { mode: 'signin' } }),
-        );
+        window.dispatchEvent(new Event('open-auth-modal'));
       }
       return;
     }
 
-    if (!comment.trim()) {
-      setFeedbackMsg({ type: 'error', text: 'Silakan tulis komentar ulasan Anda terlebih dahulu.' });
+    if (!canWriteReview) {
+      setFeedbackMsg({
+        type: 'error',
+        text: 'Verified purchase required: Only customers who bought this product can leave a review.',
+      });
       return;
     }
 
     if (!productId) {
-      setFeedbackMsg({ type: 'error', text: 'ID produk belum tersedia.' });
+      setFeedbackMsg({ type: 'error', text: 'Product ID is unavailable.' });
       return;
     }
 
-    submitReviewMutation.mutate();
+    const sanitizedComment = sanitizeText(comment.trim());
+    const parsed = reviewInputSchema.safeParse({
+      rating: selectedRating,
+      comment: sanitizedComment,
+    });
+
+    if (!parsed.success) {
+      setFeedbackMsg({
+        type: 'error',
+        text: parsed.error.issues[0]?.message || 'Please enter a valid review.',
+      });
+      return;
+    }
+
+    submitReviewMutation.mutate(parsed.data);
   };
 
   const formatDateLabel = (isoDate?: string, fallback = 'Recently') => {
@@ -140,7 +198,7 @@ export default function ProductTabs({
           <>
             <h3 className="text-base font-bold text-slate-900">Product Description</h3>
             <p className="whitespace-pre-line">{longDesc}</p>
-            
+
             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 border border-slate-200 font-mono text-[11px] mt-4">
               <div>
                 <span className="text-slate-400 block text-[9px] uppercase">First Released</span>
@@ -198,7 +256,7 @@ export default function ProductTabs({
 
         {activeTab === 'reviews' && (
           <div className="space-y-6">
-            {/* Ringkasan Rating */}
+            {/* Rating Summary */}
             <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-50 p-4 border border-slate-200">
               <div className="flex items-center gap-4">
                 <div className="text-3xl font-black text-slate-900">
@@ -222,26 +280,34 @@ export default function ProductTabs({
                   </span>
                 </div>
               </div>
+
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-[11px] font-bold text-emerald-700">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                100% Verified Buyer Reviews
+              </span>
             </div>
 
-            {/* Form Tulis Ulasan */}
+            {/* Write Review Access Gate */}
             <div className="border border-slate-200 p-4 bg-white space-y-4">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                Write a Product Review
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                  Write a Product Review
+                </h4>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Verified Buyers Only
+                </span>
+              </div>
 
               {!currentUser ? (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3.5 border border-slate-200">
                   <p className="text-xs text-slate-600">
-                    Sign in to share your rating and experience with this product.
+                    Sign in with the account you used to purchase this product to leave a review.
                   </p>
                   <button
                     type="button"
                     onClick={() => {
                       if (typeof window !== 'undefined') {
-                        window.dispatchEvent(
-                          new CustomEvent('open-auth-modal', { detail: { mode: 'signin' } }),
-                        );
+                        window.dispatchEvent(new Event('open-auth-modal'));
                       }
                     }}
                     className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-[11px] font-bold uppercase tracking-wider cursor-pointer shrink-0"
@@ -249,6 +315,28 @@ export default function ProductTabs({
                     <LogIn className="w-3.5 h-3.5" />
                     <span>Sign In to Review</span>
                   </button>
+                </div>
+              ) : isCheckingPurchase ? (
+                <div className="h-14 bg-slate-50 border border-slate-200 animate-pulse flex items-center justify-center text-xs text-slate-400">
+                  Verifying purchase history...
+                </div>
+              ) : !canWriteReview ? (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50/70 p-4 border border-amber-200">
+                  <div className="flex items-start gap-2.5">
+                    <Lock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">
+                        Verified Purchase Required
+                      </p>
+                      <p className="text-[11px] text-slate-600 mt-0.5">
+                        To keep reviews authentic, only customers who have purchased and unlocked this asset can submit a review.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-200 text-[10px] font-bold uppercase tracking-wider text-amber-700 shrink-0">
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    Not Purchased Yet
+                  </span>
                 </div>
               ) : (
                 <form onSubmit={handleReviewSubmit} className="space-y-3">
@@ -322,7 +410,7 @@ export default function ProductTabs({
               )}
             </div>
 
-            {/* Daftar Ulasan */}
+            {/* Reviews List */}
             {isLoadingReviews ? (
               <div className="space-y-3">
                 {[1, 2].map((skeleton) => (
@@ -336,12 +424,10 @@ export default function ProductTabs({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-900">{rev.reviewer_name}</span>
-                        {rev.is_verified_purchase && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase">
-                            <ShieldCheck className="w-3 h-3" />
-                            Verified Purchase
-                          </span>
-                        )}
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase">
+                          <ShieldCheck className="w-3 h-3" />
+                          Verified Purchase
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="flex items-center text-amber-500">
@@ -376,7 +462,7 @@ export default function ProductTabs({
               </div>
             ) : (
               <div className="border border-dashed border-slate-200 p-6 text-center text-slate-500">
-                No reviews yet for this product. Be the first to share your feedback!
+                No reviews yet for this product. Be the first verified buyer to share your feedback!
               </div>
             )}
           </div>

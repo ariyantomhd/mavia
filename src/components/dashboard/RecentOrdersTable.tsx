@@ -10,15 +10,15 @@ interface Props {
 
 export function RecentOrdersTable({ orders, title, subtitle }: Props) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-slate-100">
+    <div className="bg-white/70 backdrop-blur-s border border-white/60 ring-1 ring-slate-900/5 rounded-2xl shadow-lg shadow-slate-200/50 overflow-hidden">
+      <div className="p-6 border-b border-slate-200/60 bg-white/40">
         <h3 className="text-lg font-bold text-slate-900">{title}</h3>
         <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+            <tr className="bg-slate-900/3 text-[10px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200/60">
               <th className="p-4 font-bold">Invoice</th>
               <th className="p-4 font-bold">Product</th>
               <th className="p-4 font-bold">Total</th>
@@ -26,9 +26,9 @@ export function RecentOrdersTable({ orders, title, subtitle }: Props) {
               <th className="p-4 font-bold">Date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-200/50">
             {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
+              <tr key={order.id} className="hover:bg-white/60 transition-colors">
                 <td className="p-4 text-xs font-mono text-indigo-600 font-bold">
                   {order.order_number}
                 </td>
@@ -39,7 +39,7 @@ export function RecentOrdersTable({ orders, title, subtitle }: Props) {
                   ${order.total_amount.toFixed(2)}
                 </td>
                 <td className="p-4">
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border border-emerald-200 bg-emerald-50 text-emerald-700">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border border-emerald-300/60 bg-emerald-500/10 backdrop-blur-sm text-emerald-700">
                     {order.status}
                   </span>
                 </td>
