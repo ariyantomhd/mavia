@@ -36,7 +36,7 @@ export default function Navbar() {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Sinkronisasi jumlah keranjang dari backend menggunakan service apiCart
+  // Sync cart count from backend
   useEffect(() => {
     const fetchCartCount = async () => {
       if (!isLoggedIn) {
@@ -58,7 +58,6 @@ export default function Navbar() {
           setCartCount(0);
         }
       } catch {
-        console.log('Cart sync info: Gagal mengambil data keranjang.');
         setCartCount(0);
       }
     };
@@ -68,7 +67,7 @@ export default function Navbar() {
     }
   }, [mounted, isLoggedIn, setCartCount]);
 
-  // Logic Sign Out lengkap: hit backend -> hapus token & state -> redirect ke '/'
+  // Complete sign out: invalidate backend cookie -> clear local state -> redirect home
   const handleLogout = async () => {
     try {
       await api.post('/auth/signout');
@@ -77,6 +76,7 @@ export default function Navbar() {
     } finally {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
       }
       logout();
       setCartCount(0);
@@ -85,10 +85,12 @@ export default function Navbar() {
     }
   };
 
-  // Semua akses autentikasi diarahkan langsung ke /login (Social OAuth)
+  // Trigger modal-only Google OAuth flow
   const openAuthModal = () => {
     setIsMobileMenuOpen(false);
-    router.push('/login');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('open-auth-modal'));
+    }
   };
 
   return (

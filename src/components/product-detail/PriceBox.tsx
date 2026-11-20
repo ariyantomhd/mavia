@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Check, CheckCircle2, ChevronDown, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAppStore } from '@/store/useAppStore';
 import { Product } from '@/types/product';
 import { apiCart } from '@/services/apicart';
@@ -19,7 +20,7 @@ interface PriceBoxProps {
   productData?: Product;
 }
 
-// Definisikan tipe payload yang strict tanpa 'any'
+// Strict payload interface without 'any'
 interface CartPayloadWithLicense {
   productId: string;
   quantity: number;
@@ -61,7 +62,7 @@ export default function PriceBox({
         license_type: selectedLicense,
       };
 
-      // Type-casting aman ke parameter fungsi tanpa melibatkan 'any'
+      // Safe type-casting to function parameter without involving 'any'
       type AddToCartParam = Parameters<typeof apiCart.addToCart>[0];
       await apiCart.addToCart(payload as unknown as AddToCartParam);
 
@@ -70,7 +71,7 @@ export default function PriceBox({
       setTimeout(() => setIsAdded(false), 3000);
     } catch (error: unknown) {
       console.error('Error adding to cart:', error);
-      alert('Terjadi kesalahan saat memasukkan produk ke keranjang.');
+      alert('Failed to add product to your cart. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -96,13 +97,12 @@ export default function PriceBox({
       </div>
 
       <div>
-        <a 
-          href="#license-details" 
-          onClick={(e) => { e.preventDefault(); alert("Menampilkan detail lisensi..."); }}
+        <Link
+          href="/license"
           className="text-xs text-blue-600 hover:underline font-medium inline-block"
         >
           View license details
-        </a>
+        </Link>
       </div>
 
       <div className="space-y-2.5 pt-1 border-t border-slate-100">
@@ -116,7 +116,7 @@ export default function PriceBox({
         </div>
         <div className="flex items-center space-x-2 text-xs text-slate-700">
           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 fill-emerald-50" />
-          <span>Quality checked by Codester</span>
+          <span>Quality checked by Themavia</span>
         </div>
         <div className="flex items-center space-x-2 text-xs text-slate-700">
           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 fill-emerald-50" />
@@ -126,6 +126,7 @@ export default function PriceBox({
 
       <div className="pt-2">
         <button
+          type="button"
           onClick={handleAddToCart}
           disabled={isLoading}
           aria-label={isAdded ? `${activeProductName} added to cart` : `Add ${activeProductName} to cart`}
@@ -137,7 +138,7 @@ export default function PriceBox({
           ) : isAdded ? (
             <>
               <Check className="h-4 w-4" />
-              <span>Added </span>
+              <span>Added</span>
             </>
           ) : (
             <>

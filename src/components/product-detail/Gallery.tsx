@@ -119,7 +119,7 @@ export default function Gallery({
   const [isZoomed, setIsZoomed] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  // Sinkronisasi status Like dari API (jika tersedia)
+  // Sync product like status from API
   const { data: likesSummary } = useQuery({
     queryKey: ['product-likes', resolvedProductId, currentUser?.id],
     queryFn: () => productAPI.getProductLikes(resolvedProductId!),
@@ -157,15 +157,14 @@ export default function Gallery({
       }
     },
     onError: () => {
-      // Tetap pertahankan state optimis lokal jika BE belum terpasang
+      // Keep local optimistic state if backend endpoint is unavailable
     },
   });
 
   const handleLikeClick = () => {
-    const hasToken =
-      typeof window !== 'undefined' && Boolean(localStorage.getItem('token'));
+    const isLoggedIn = Boolean(currentUser && currentUser.id);
 
-    if (!currentUser && !hasToken) {
+    if (!isLoggedIn) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('open-auth-modal', { detail: { mode: 'signin' } }),

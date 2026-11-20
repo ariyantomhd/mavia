@@ -13,12 +13,10 @@ export default function SessionExpiredModal() {
   const logout = useAppStore((state) => state.logout);
   const setSessionExpired = useAppStore((state) => state.setSessionExpired);
 
-  // Jika tidak ada token maupun currentUser aktif saat pertama buka halaman, bersihkan secara diam-diam
+  // Silently reset expired flag if there is no active user in state
   useEffect(() => {
     if (!isSessionExpired) return;
-    const hasToken =
-      typeof window !== 'undefined' && Boolean(localStorage.getItem('token'));
-    if (!hasToken && !currentUser) {
+    if (!currentUser) {
       logout();
       setSessionExpired(false);
     }
@@ -29,7 +27,7 @@ export default function SessionExpiredModal() {
   const handleSignInAgain = () => {
     logout();
     setSessionExpired(false);
-    router.replace('/login');
+    router.replace('/?login=true');
   };
 
   const handleContinueAsGuest = () => {

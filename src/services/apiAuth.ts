@@ -1,9 +1,9 @@
 // src/services/apiAuth.ts
 import { api } from './wrapperAPI';
-import { 
-  User, 
-  UpdateUserProfileInput, 
-  UpdateUserPasswordInput 
+import {
+  User,
+  UpdateUserProfileInput,
+  UpdateUserPasswordInput,
 } from '@/types';
 
 export interface AuthResponse {
@@ -23,22 +23,24 @@ export interface SocialAuthResponse {
   url: string;
 }
 
-export type SocialProvider = 'google' | 'facebook' | 'x' | 'discord';
+export type SocialProvider = 'google';
 
 export const apiAuth = {
-  // Inisiasi redirect ke URL OAuth backend untuk 4 provider didukung
-  socialLogin: async (provider: SocialProvider, mode: 'signin' | 'signup' = 'signin'): Promise<SocialAuthResponse> => {
+  // Initiate redirect to backend Google OAuth URL
+  socialLogin: async (
+    provider: SocialProvider = 'google',
+    mode: 'signin' | 'signup' = 'signin'
+  ): Promise<SocialAuthResponse> => {
     return await api.get<SocialAuthResponse>(`/auth/${provider}?mode=${mode}`);
   },
 
+  // Fetch authenticated user profile via HttpOnly session cookie
   getMe: async (): Promise<AuthResponse | null> => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        return null;
-      }
+    try {
+      return await api.get<AuthResponse>('/auth/me');
+    } catch {
+      return null;
     }
-    return await api.get<AuthResponse>('/auth/me');
   },
 
   signout: async (): Promise<GenericAuthResponse> => {
@@ -52,11 +54,15 @@ export const apiAuth = {
     }
   },
 
-  updatePassword: async (payload: UpdateUserPasswordInput): Promise<GenericAuthResponse> => {
+  updatePassword: async (
+    payload: UpdateUserPasswordInput
+  ): Promise<GenericAuthResponse> => {
     return await api.put<GenericAuthResponse>('/auth/password', payload);
   },
 
-  updateProfile: async (payload: UpdateUserProfileInput): Promise<AuthResponse> => {
+  updateProfile: async (
+    payload: UpdateUserProfileInput
+  ): Promise<AuthResponse> => {
     return await api.put<AuthResponse>('/auth/profile', payload);
   },
 };

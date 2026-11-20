@@ -51,6 +51,11 @@ export default function MobileMenu({
     }
   };
 
+  const handleOpenSignInModal = () => {
+    onClose();
+    window.dispatchEvent(new Event('open-auth-modal'));
+  };
+
   return (
     <div className="lg:hidden border-b border-slate-800 bg-[#0F1035] px-4 pt-3 pb-6 flex flex-col gap-4">
       <form onSubmit={handleSearchSubmit} className="relative w-full">
@@ -231,18 +236,13 @@ export default function MobileMenu({
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            <Link
-              href="/login"
-              onClick={onClose}
-              className="w-full text-center py-2.5 text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 rounded-xl shadow-lg shadow-indigo-600/25 transition-all"
-            >
-              Sign In
-            </Link>
-            <p className="text-[11px] text-center text-slate-400">
-              
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={handleOpenSignInModal}
+            className="w-full text-center py-2.5 text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 rounded-xl shadow-lg shadow-indigo-600/25 transition-all cursor-pointer"
+          >
+            Sign In
+          </button>
         )}
       </div>
     </div>

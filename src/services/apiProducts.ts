@@ -1,10 +1,10 @@
 // src/services/apiProducts.ts
 import { api } from './wrapperAPI';
-import { 
-  Product, 
-  ProductCategory, 
-  ProductGallery, 
-  ProductQueryParams 
+import {
+  Product,
+  ProductCategory,
+  ProductGallery,
+  ProductQueryParams,
 } from '@/types/product';
 
 export interface ApiResponse<T> {
@@ -42,6 +42,12 @@ export interface SubmitReviewPayload {
   comment: string;
 }
 
+export interface PurchaseEligibilityResponse {
+  success?: boolean;
+  has_purchased: boolean;
+  has_license: boolean;
+}
+
 export const productAPI = {
   async getProducts(params?: ProductQueryParams): Promise<Product[]> {
     return await api.get<Product[]>('/products', { params });
@@ -73,6 +79,18 @@ export const productAPI = {
 
   async getCategories(): Promise<ProductCategory[]> {
     return await api.get<ProductCategory[]>('/categories');
+  },
+
+  // --- PURCHASE & LICENSE VERIFICATION ---
+  async checkPurchaseEligibility(productId: string): Promise<boolean> {
+    try {
+      const res = await api.get<PurchaseEligibilityResponse>(
+        `/products/${productId}/check-purchase`,
+      );
+      return Boolean(res?.has_license ?? res?.has_purchased);
+    } catch {
+      return false;
+    }
   },
 
   // --- LIKES / WISHLIST ---

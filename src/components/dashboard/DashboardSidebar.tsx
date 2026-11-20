@@ -17,7 +17,7 @@ export function DashboardSidebar({ activeTab, onSelectTab }: Props) {
   ];
 
   return (
-    <aside className="w-full md:w-64 bg-white/70 backdrop-blur-xl border-b md:border-b-0 md:border-r border-white/60 ring-1 ring-slate-900/5 shrink-0">
+    <aside className="w-full md:w-64 bg-white/45 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-white/70 shadow-[4px_0_24px_-4px_rgba(15,23,42,0.06)] shrink-0">
       <div className="p-6">
         <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md shadow-indigo-600/25">
@@ -25,7 +25,7 @@ export function DashboardSidebar({ activeTab, onSelectTab }: Props) {
           </div>
           THEMAVIA
         </h2>
-        <div className="mt-2.5 text-[10px] font-bold text-indigo-700 tracking-widest uppercase bg-indigo-500/10 backdrop-blur-md border border-indigo-200/60 px-2.5 py-1 rounded-md inline-block">
+        <div className="mt-2.5 text-[10px] font-bold text-indigo-700 tracking-widest uppercase bg-white/50 backdrop-blur-md border border-white/70 px-2.5 py-1 rounded-md inline-block shadow-2xs">
           Buyer Hub
         </div>
       </div>
@@ -40,11 +40,11 @@ export function DashboardSidebar({ activeTab, onSelectTab }: Props) {
               onClick={() => onSelectTab(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
-                  : 'text-slate-600 hover:bg-white/60 hover:text-slate-900 hover:shadow-xs'
+                  ? 'bg-indigo-600/90 backdrop-blur-md text-white border border-indigo-400/50 shadow-md shadow-indigo-600/20'
+                  : 'text-slate-700 hover:bg-white/55 hover:text-slate-900 hover:backdrop-blur-md hover:shadow-2xs'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
               {item.label}
             </button>
           );

@@ -59,7 +59,7 @@ export default function DashboardPage() {
           setLoading(false);
         } else {
           logout();
-          router.replace('/login');
+          router.replace('/?login=true');
         }
       } catch (error: unknown) {
         const errObj = error as { status?: number; message?: string };
@@ -72,7 +72,7 @@ export default function DashboardPage() {
           message.toLowerCase().includes('session')
         ) {
           logout();
-          router.replace('/login');
+          router.replace('/?login=true');
           return;
         }
 

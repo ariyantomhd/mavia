@@ -23,24 +23,26 @@ export default function CartHeader({
             <ShoppingBag className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            Keranjang Belanja
+            Shopping Cart
           </h1>
         </div>
         <p className="text-slate-500 text-xs sm:text-sm mt-1">
-          Kelola item produk, ubah kuantitas, dan selesaikan transaksi dengan PayPal.
+          Manage your selected items, adjust quantities, and complete checkout seamlessly.
         </p>
       </div>
 
       {!cartIsEmpty && (
         <div className="flex items-center gap-4 text-xs font-bold text-slate-600">
           <span className="bg-slate-200/70 px-3 py-1.5 rounded-md">
-            {totalItemsCount} Total Item ({totalKindsCount} Macam Produk)
+            {totalItemsCount} Total {totalItemsCount === 1 ? 'Item' : 'Items'} ({totalKindsCount}{' '}
+            {totalKindsCount === 1 ? 'Product' : 'Products'})
           </span>
-          <button 
+          <button
+            type="button"
             onClick={onClearCart}
             className="text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
           >
-            Kosongkan Keranjang
+            Clear Cart
           </button>
         </div>
       )}

@@ -1,3 +1,4 @@
+// src/components/dashboard/tabs/DownloadsTab.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -60,7 +61,7 @@ export function DownloadsTab({ orders = [] }: DownloadsTabProps) {
           const message =
             typeof err === 'object' && err !== null && 'message' in err
               ? String((err as { message: unknown }).message)
-              : 'Gagal memuat daftar lisensi.';
+              : 'Failed to load license list.';
           setErrorMsg(message);
         }
       } finally {
@@ -133,13 +134,13 @@ export function DownloadsTab({ orders = [] }: DownloadsTabProps) {
         link.click();
         document.body.removeChild(link);
       } else {
-        throw new Error(res?.message || 'Tautan unduhan tidak tersedia.');
+        throw new Error(res?.message || 'Download link is currently unavailable.');
       }
     } catch (err: unknown) {
       const message =
         typeof err === 'object' && err !== null && 'message' in err
           ? String((err as { message: unknown }).message)
-          : 'Gagal mengunduh file ZIP produk.';
+          : 'Failed to download product ZIP archive.';
       setErrorMsg(message);
     } finally {
       setDownloadingId(null);
@@ -152,7 +153,7 @@ export function DownloadsTab({ orders = [] }: DownloadsTabProps) {
         <div>
           <h2 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
             <Download className="w-5 h-5 text-indigo-600" />
-            <span>Digital Downloads & Licenses</span>
+            <span>Digital Downloads &amp; Licenses</span>
           </h2>
           <p className="text-xs text-slate-500">
             Access official ZIP source files and activation keys for your purchased products.
@@ -170,7 +171,7 @@ export function DownloadsTab({ orders = [] }: DownloadsTabProps) {
       {loading ? (
         <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
           <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-          <span className="text-xs">Loading your licenses & digital assets...</span>
+          <span className="text-xs">Loading your licenses &amp; digital assets...</span>
         </div>
       ) : licenses.length === 0 ? (
         <div className="border border-dashed border-slate-300 rounded-xl p-12 text-center text-slate-500 text-xs bg-slate-50">

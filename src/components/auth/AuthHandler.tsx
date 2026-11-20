@@ -7,7 +7,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { apiAuth } from '@/services/apiAuth';
 import type { User as UserType } from '@/types';
 
-// Helper untuk memastikan string adalah format JWT asli (3 segmen dipisah titik & diawali eyJ)
+// Helper to verify valid JWT format (3 dot-separated segments starting with eyJ)
 function isValidJwtFormat(token: string | null): token is string {
   if (!token) return false;
   const parts = token.split('.');
@@ -27,7 +27,7 @@ function AuthHandlerContent() {
       const searchParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
 
-      // 1. JANGAN proses jika ini adalah redirect callback dari PayPal (mengandung PayerID atau di rute checkout/payment)
+      // 1. Ignore PayPal checkout/payment callback redirects
       const isPayPalRedirect =
         searchParams.has('PayerID') ||
         searchParams.has('ba_token') ||
@@ -38,13 +38,15 @@ function AuthHandlerContent() {
         return;
       }
 
+      // 2. Handle OAuth error by redirecting to home and triggering AuthModal
       const authError = searchParams.get('error');
       if (authError) {
         console.error('OAuth Callback Error:', authError);
-        window.history.replaceState({}, document.title, window.location.pathname);
-        router.replace('/login?error=' + encodeURIComponent(authError));
+        router.replace(`/?login=true&error=${encodeURIComponent(authError)}`);
         return;
       }
+
+      const isAuthSuccess = searchParams.get('auth') === 'success';
 
       let accessToken =
         searchParams.get('token') || searchParams.get('access_token');
@@ -61,11 +63,15 @@ function AuthHandlerContent() {
         refreshToken = hashParams.get('refresh_token');
       }
 
-      // 2. Hanya proses jika token benar-benar format JWT valid (bukan ID transaksi PayPal)
-      if (accessToken && isValidJwtFormat(accessToken)) {
-        localStorage.setItem('token', accessToken);
-        if (refreshToken) {
-          localStorage.setItem('refresh_token', refreshToken);
+      const hasLegacyToken = Boolean(accessToken && isValidJwtFormat(accessToken));
+
+      // 3. Process HttpOnly cookie session (?auth=success) or legacy JWT callback
+      if (isAuthSuccess || hasLegacyToken) {
+        if (hasLegacyToken && accessToken) {
+          localStorage.setItem('token', accessToken);
+          if (refreshToken) {
+            localStorage.setItem('refresh_token', refreshToken);
+          }
         }
 
         try {
@@ -87,31 +93,22 @@ function AuthHandlerContent() {
                 username:
                   userData.username ||
                   userData.email?.split('@')[0] ||
-                  'User Themavia',
+                  'Themavia User',
                 email: userData.email || '',
                 avatar_url: userData.avatar_url || null,
                 role: userData.role || 'BUYER',
               },
-              accessToken
+              accessToken || 'cookie-session'
             );
           }
-
-          window.history.replaceState({}, document.title, '/dashboard');
-          router.replace('/dashboard');
-          router.refresh();
         } catch (err) {
-          console.error('Gagal mengambil profil user setelah auth callback:', err);
-          loginStore(
-            {
-              id: 'temp-id',
-              username: 'User Themavia',
-              email: '',
-              role: 'BUYER',
-            },
-            accessToken
-          );
-          window.history.replaceState({}, document.title, '/dashboard');
-          router.replace('/dashboard');
+          console.error('Failed to fetch user profile after auth callback:', err);
+        } finally {
+          // Clean query params and land on the homepage with active login state
+          window.history.replaceState({}, document.title, '/');
+          if (window.location.pathname !== '/') {
+            router.replace('/');
+          }
           router.refresh();
         }
       }

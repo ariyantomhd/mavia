@@ -55,22 +55,22 @@ export default function ProductTabs({
   const currentUser = useAppStore((state) => state.currentUser);
   const [activeTab, setActiveTab] = useState<'desc' | 'features' | 'changelog' | 'reviews'>('desc');
 
-  // New review form states
+  // Review form states
   const [selectedRating, setSelectedRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [comment, setComment] = useState<string>('');
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Check whether the authenticated user has purchased this product
+  // Verify 1-to-1 product ownership & active license for this specific product
   const { data: purchaseEligibility, isLoading: isCheckingPurchase } = useQuery({
     queryKey: ['product-purchase-check', productId, currentUser?.id],
     queryFn: async () => {
       if (typeof initialHasPurchased === 'boolean') return initialHasPurchased;
       try {
-        const res = await api.get<{ has_purchased?: boolean }>(
+        const res = await api.get<{ has_purchased?: boolean; has_license?: boolean }>(
           `/products/${productId}/check-purchase`
         );
-        return Boolean(res?.has_purchased);
+        return Boolean(res?.has_license ?? res?.has_purchased);
       } catch {
         return false;
       }
@@ -111,7 +111,7 @@ export default function ProductTabs({
         text:
           errObj?.error?.details ||
           errObj?.message ||
-          'Only verified buyers who have purchased this product can submit a review.',
+          'Verified license required: Only customers who own an active license for this product can submit a review.',
       });
     },
   });
@@ -130,7 +130,7 @@ export default function ProductTabs({
     if (!canWriteReview) {
       setFeedbackMsg({
         type: 'error',
-        text: 'Verified purchase required: Only customers who bought this product can leave a review.',
+        text: 'Verified license required: Only customers with an active license for this product can leave a review.',
       });
       return;
     }
@@ -249,7 +249,7 @@ export default function ProductTabs({
               <p className="text-slate-500 text-[11px]">
                 Released {formatDateLabel(updatedAt || createdAt, 'Recently')}
               </p>
-              <p className="mt-1">Production-ready release with modular source code & documentation.</p>
+              <p className="mt-1">Production-ready release with modular source code &amp; documentation.</p>
             </div>
           </div>
         )}
@@ -283,7 +283,7 @@ export default function ProductTabs({
 
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-[11px] font-bold text-emerald-700">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                100% Verified Buyer Reviews
+                100% Verified License Reviews
               </span>
             </div>
 
@@ -294,14 +294,14 @@ export default function ProductTabs({
                   Write a Product Review
                 </h4>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Verified Buyers Only
+                  Verified License Holders Only
                 </span>
               </div>
 
               {!currentUser ? (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3.5 border border-slate-200">
                   <p className="text-xs text-slate-600">
-                    Sign in with the account you used to purchase this product to leave a review.
+                    Sign in with the account that holds an active license for this product to leave a review.
                   </p>
                   <button
                     type="button"
@@ -318,7 +318,7 @@ export default function ProductTabs({
                 </div>
               ) : isCheckingPurchase ? (
                 <div className="h-14 bg-slate-50 border border-slate-200 animate-pulse flex items-center justify-center text-xs text-slate-400">
-                  Verifying purchase history...
+                  Verifying product license ownership...
                 </div>
               ) : !canWriteReview ? (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50/70 p-4 border border-amber-200">
@@ -326,16 +326,16 @@ export default function ProductTabs({
                     <Lock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs font-bold text-slate-900">
-                        Verified Purchase Required
+                        Active Product License Required
                       </p>
                       <p className="text-[11px] text-slate-600 mt-0.5">
-                        To keep reviews authentic, only customers who have purchased and unlocked this asset can submit a review.
+                        Only customers who have purchased and hold an active license for this specific product can rate and submit a review.
                       </p>
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-200 text-[10px] font-bold uppercase tracking-wider text-amber-700 shrink-0">
                     <ShoppingBag className="w-3.5 h-3.5" />
-                    Not Purchased Yet
+                    No License Found
                   </span>
                 </div>
               ) : (
@@ -462,7 +462,7 @@ export default function ProductTabs({
               </div>
             ) : (
               <div className="border border-dashed border-slate-200 p-6 text-center text-slate-500">
-                No reviews yet for this product. Be the first verified buyer to share your feedback!
+                No reviews yet for this product. Be the first verified license holder to share your feedback!
               </div>
             )}
           </div>

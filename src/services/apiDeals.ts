@@ -72,7 +72,7 @@ export const apiDeals = {
 
     const json = (await response.json()) as DealsApiResponse;
     if (!response.ok || !json.success) {
-      throw new Error(json.message || 'Gagal mengambil data deals dari server.');
+      throw new Error(json.message || 'Failed to load deals from the server.');
     }
 
     return json;

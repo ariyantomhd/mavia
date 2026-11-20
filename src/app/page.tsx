@@ -1,7 +1,7 @@
 // src/app/page.tsx
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { productAPI } from '@/services/apiProducts';
@@ -12,28 +12,6 @@ import LandingSections from '@/components/landingpage/LandingSections';
 
 export default function HomePage() {
   const router = useRouter();
-
-  // Tangkap token verifikasi Supabase dari URL hash setelah klik email
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash;
-      if (hash && hash.includes('access_token')) {
-        const params = new URLSearchParams(hash.replace('#', '?'));
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-
-        if (accessToken) {
-          localStorage.setItem('token', accessToken);
-          if (refreshToken) {
-            localStorage.setItem('refresh_token', refreshToken);
-          }
-
-          window.history.replaceState({}, document.title, window.location.pathname);
-          window.location.reload();
-        }
-      }
-    }
-  }, []);
 
   const { data: featuredResponse, isLoading: loadingFeatured } = useQuery({
     queryKey: ['featured-products'],
@@ -69,7 +47,7 @@ export default function HomePage() {
   };
 
   const handleWatchDemo = () => {
-    console.log('Watch demo clicked');
+    router.push('/products');
   };
 
   return (

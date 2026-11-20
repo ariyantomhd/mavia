@@ -99,7 +99,7 @@ export default function BlogBanner() {
     <div
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative bg-[#251b3d] border border-white/10 rounded-3xl overflow-hidden flex items-stretch justify-between min-h-47.5 sm:min-h-51.25 h-full group"
+      className="relative bg-[#0F1035] border border-white/10 rounded-3xl overflow-hidden flex items-stretch justify-between min-h-47.5 sm:min-h-51.25 h-full group"
     >
       {/* Ambient background glow */}
       <div className="pointer-events-none absolute -right-10 -bottom-10 w-56 h-56 rounded-full bg-purple-500/20 blur-2xl" />

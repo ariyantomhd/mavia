@@ -36,8 +36,10 @@ export default function CartItemList({
     <div className="lg:col-span-2 space-y-4">
       <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
         <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
-          <span>DAFTAR ITEM ({totalItemsCount} ITEM)</span>
-          <span>Subtotal Item</span>
+          <span>
+            ITEM LIST ({totalItemsCount} {totalItemsCount === 1 ? 'ITEM' : 'ITEMS'})
+          </span>
+          <span>Item Subtotal</span>
         </div>
 
         <div className="divide-y divide-slate-100">
@@ -58,8 +60,9 @@ export default function CartItemList({
                       {item.image ? (
                         <Image
                           src={item.image}
-                          alt={item.title || 'Produk Digital'}
+                          alt={item.title || 'Digital Product'}
                           fill
+                          sizes="80px"
                           className="object-cover"
                           referrerPolicy="no-referrer"
                         />
@@ -73,13 +76,13 @@ export default function CartItemList({
                         {item.category || 'DIGITAL ASSET'}
                       </span>
                       <h3 className="text-xs sm:text-sm font-bold text-slate-800 line-clamp-1">
-                        {item.title || 'Produk Tidak Diketahui'}
+                        {item.title || 'Untitled Product'}
                       </h3>
                       <div className="flex items-center gap-2 pt-1">
                         <span className="text-xs font-mono font-bold text-slate-700">
                           ${safePrice.toFixed(2)}
                         </span>
-                        <span className="text-[10px] text-slate-400">/ lisensi</span>
+                        <span className="text-[10px] text-slate-400">/ license</span>
                         <span className="bg-slate-100 text-slate-600 font-bold text-[9px] px-1.5 py-0.5 rounded">
                           {item.license || 'Regular'}
                         </span>
@@ -93,7 +96,7 @@ export default function CartItemList({
                         type="button"
                         onClick={() => onQuantityChange(item.id, -1)}
                         className="p-2 text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
-                        title="Kurangi"
+                        title="Decrease quantity"
                       >
                         <Minus size={14} />
                       </button>
@@ -104,7 +107,7 @@ export default function CartItemList({
                         type="button"
                         onClick={() => onQuantityChange(item.id, 1)}
                         className="p-2 text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
-                        title="Tambah"
+                        title="Increase quantity"
                       >
                         <Plus size={14} />
                       </button>
@@ -123,10 +126,10 @@ export default function CartItemList({
                       type="button"
                       onClick={() => onRemoveItem(item.id)}
                       className="text-rose-500 hover:text-rose-700 p-2 rounded-lg hover:bg-rose-50 transition-colors flex items-center gap-1 text-xs font-bold cursor-pointer"
-                      title="Hapus item"
+                      title="Remove item"
                     >
                       <Trash2 size={16} />
-                      <span className="hidden xl:inline">Hapus</span>
+                      <span className="hidden xl:inline">Remove</span>
                     </button>
                   </div>
                 </div>
@@ -144,14 +147,14 @@ export default function CartItemList({
                         <div className="flex items-center gap-2">
                           <Headphones size={14} className="text-orange-500 shrink-0" />
                           <span className="text-xs font-bold text-slate-800">
-                            Dukungan Teknis (3 Bulan)
+                            Technical Support (3 Months)
                           </span>
                           <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium border border-slate-200">
-                            Opsional
+                            Optional
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-500">
-                          Bantuan instalasi langsung, perbaikan bug prioritas, dan konsultasi kode selama 3 Bulan.
+                          Direct installation assistance, priority bug fixes, and code consultation for 3 months.
                         </p>
                       </div>
                     </label>
@@ -172,13 +175,13 @@ export default function CartItemList({
       </div>
 
       <div className="flex flex-col sm:flex-row items-center justify-between bg-white border border-slate-200 rounded-xl p-4 gap-4 text-xs text-slate-500 shadow-xs">
-        <span>File digital akan dikirimkan otomatis setelah checkout berhasil.</span>
+        <span>Digital files will be delivered automatically after successful checkout.</span>
         <Link
           href="/products"
           className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center gap-2 cursor-pointer shrink-0"
         >
           <Plus size={14} />
-          <span>Tambah Item Lain</span>
+          <span>Add More Items</span>
         </Link>
       </div>
     </div>

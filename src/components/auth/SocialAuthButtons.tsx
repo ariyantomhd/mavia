@@ -9,7 +9,7 @@ interface SocialAuthButtonsProps {
   mode?: 'signin' | 'signup';
 }
 
-type ProviderKey = 'google' | 'x';
+type ProviderKey = 'google';
 
 export default function SocialAuthButtons({
   disabled,
@@ -68,23 +68,17 @@ export default function SocialAuthButtons({
     }
   };
 
-  const baseClass =
-    'flex w-full items-center justify-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition-all duration-200';
-  const lockedClass =
-    'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400';
-
   return (
     <div className="w-full space-y-2.5">
-      <div className="grid grid-cols-2 gap-2.5">
-        {/* Google */}
+      <div className="flex justify-center">
         <button
           type="button"
           disabled={disabled || loadingProvider !== null}
           onClick={() => handleSocialLogin('google')}
-          className={`${baseClass} ${
+          className={`flex h-11 w-full max-w-xs items-center justify-center gap-3 rounded-xl border px-5 text-xs font-bold tracking-tight transition-all duration-200 ${
             disabled
-              ? lockedClass
-              : 'cursor-pointer border-rose-200 bg-white text-slate-800 shadow-2xs hover:border-rose-300 hover:bg-rose-50/40 active:scale-[0.98]'
+              ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+              : 'cursor-pointer border-slate-200/90 bg-white/90 text-slate-800 shadow-sm backdrop-blur-md hover:border-indigo-300 hover:bg-indigo-50/40 hover:shadow active:scale-[0.98]'
           }`}
         >
           <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
@@ -105,28 +99,9 @@ export default function SocialAuthButtons({
               d="M12 4.75c1.79 0 3.41.62 4.68 1.82l3.51-3.51C18.07 1.19 15.3 0 12 0 7.24 0 3.05 2.8 1.01 6.83l4.01 3.14c.98-2.95 3.73-5.22 6.98-5.22Z"
             />
           </svg>
-          <span>{loadingProvider === 'google' ? 'Connecting...' : 'Google'}</span>
-        </button>
-
-        {/* X */}
-        <button
-          type="button"
-          disabled={disabled || loadingProvider !== null}
-          onClick={() => handleSocialLogin('x')}
-          className={`${baseClass} ${
-            disabled
-              ? lockedClass
-              : 'cursor-pointer border-slate-900 bg-slate-900 text-white shadow-2xs hover:bg-slate-800 active:scale-[0.98]'
-          }`}
-        >
-          <svg
-            className="h-3.5 w-3.5 shrink-0"
-            fill={disabled ? '#94a3b8' : '#ffffff'}
-            viewBox="0 0 24 24"
-          >
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-          </svg>
-          <span>{loadingProvider === 'x' ? 'Connecting...' : 'X'}</span>
+          <span>
+            {loadingProvider === 'google' ? 'Connecting...' : 'Continue with Google'}
+          </span>
         </button>
       </div>
 
