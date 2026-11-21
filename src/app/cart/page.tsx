@@ -44,6 +44,8 @@ interface ServerCartPayload {
   subtotal?: number;
 }
 
+const TAX_RATE = 0;
+
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartPageItem[]>([]);
   const [serverSubtotal, setServerSubtotal] = useState<number>(0);
@@ -238,7 +240,9 @@ export default function CartPage() {
     setNotification(null);
   };
 
-  const finalTotal = Number(Math.max(0, serverSubtotal - discountAmount).toFixed(2));
+  const discountedSubtotal = Math.max(0, serverSubtotal - discountAmount);
+  const taxAmount = Number((discountedSubtotal * TAX_RATE).toFixed(2));
+  const finalTotal = Number((discountedSubtotal + taxAmount).toFixed(2));
 
   const checkoutPayloadItems: CartItemPayload[] = cartItems.map((item) => ({
     product_id: item.productId,
@@ -260,7 +264,7 @@ export default function CartPage() {
 
         {/* Dismissible Inline Error Notification */}
         {notification && (
-          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold shadow-xs">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-rose-50/90 backdrop-blur-md border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold shadow-xs">
             <div className="flex items-center gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{notification}</span>
@@ -282,11 +286,11 @@ export default function CartPage() {
               {[1, 2].map((skeleton) => (
                 <div
                   key={skeleton}
-                  className="h-36 rounded-3xl bg-white/75 border border-slate-200/80 animate-pulse"
+                  className="h-36 rounded-3xl bg-white/45 backdrop-blur-2xl border border-white/70 animate-pulse"
                 />
               ))}
             </div>
-            <div className="h-80 rounded-3xl bg-white/75 border border-slate-200/80 animate-pulse" />
+            <div className="h-80 rounded-3xl bg-white/45 backdrop-blur-2xl border border-white/70 animate-pulse" />
           </div>
         ) : cartItems.length === 0 ? (
           <CartEmptyState />
@@ -304,6 +308,7 @@ export default function CartPage() {
               totalItemsCount={serverTotalItems}
               subtotal={serverSubtotal}
               discountAmount={discountAmount}
+              taxAmount={taxAmount}
               finalTotal={finalTotal}
               appliedCoupon={appliedCoupon}
               onApplyCoupon={handleApplyCoupon}

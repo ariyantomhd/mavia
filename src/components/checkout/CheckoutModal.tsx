@@ -3,6 +3,14 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Lock,
+  ShieldCheck,
+} from 'lucide-react';
 import { apiOrder } from '@/services/apiOrder';
 import { paymentAPI } from '@/services/paymentAPI';
 import CheckoutLogo from './CheckoutLogo';
@@ -41,6 +49,13 @@ interface PaymentResponseData {
   approval_url?: string;
 }
 
+const formatMoney = (amount: number): string => {
+  return amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export default function CheckoutModal({
   isOpen,
   onClose,
@@ -52,10 +67,18 @@ export default function CheckoutModal({
 }: CheckoutModalProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSummaryOpen, setIsSummaryOpen] = useState<boolean>(true);
 
   if (!isOpen) return null;
 
-  const payableTotal = finalTotal !== undefined ? finalTotal : subtotal;
+  const payableTotal =
+    finalTotal !== undefined ? finalTotal : Math.max(0, subtotal - discountAmount);
+
+  const hasSupportIncluded = cartItems.some((item) => Boolean(item.with_support));
+  const summaryLabel =
+    cartItems.length === 1 && cartItems[0]?.license_type
+      ? `Themavia ${cartItems[0].license_type.charAt(0).toUpperCase()}${cartItems[0].license_type.slice(1).toLowerCase()} License`
+      : 'Themavia Digital License';
 
   const handlePayPalCheckout = async () => {
     try {
@@ -87,7 +110,7 @@ export default function CheckoutModal({
 
       // 3. Create internal order record on backend
       const orderPayload = {
-        shipping_address: 'Digital Delivery',
+        shipping_address: 'Digital Delivery (Dashboard)',
         notes: couponCode ? `Checkout via PayPal (Coupon: ${couponCode})` : 'Checkout via PayPal',
         subtotal: subtotal,
         discount_total: discountAmount,
@@ -146,62 +169,118 @@ export default function CheckoutModal({
     }
   };
 
-  const formattedPayable = Number.isInteger(payableTotal)
-    ? payableTotal.toLocaleString('en-US')
-    : payableTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-4 overflow-y-auto">
+      <div className="bg-linear-to-b from-slate-50 via-white to-indigo-50/50 w-full max-w-md rounded-3xl shadow-2xl border border-white/80 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto">
+        {/* Top Dark Header */}
         <div className="relative">
-          <CheckoutLogo title="Payment Invoice" subtitle="THEMAVIA Digital Assets" />
+          <CheckoutLogo title="THEMAVIA" subtitle="Digital Assets" />
           <button
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="absolute right-4 top-4 text-slate-400 hover:text-white font-bold text-lg px-2 py-1 rounded-lg transition cursor-pointer"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white text-lg font-medium w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        <div className="p-8 space-y-8">
+        <div className="p-6 sm:p-7 space-y-5">
           {errorMessage && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded-xl text-red-700 text-xs font-medium">
+            <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3.5 py-2.5 rounded-xl text-xs font-medium">
               {errorMessage}
             </div>
           )}
 
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
-            <div className="text-center pb-5 border-b border-slate-200">
-              <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">
-                Total Payment Due
-              </p>
-              <h3 className="text-4xl font-black text-slate-800 tracking-tight font-mono">
-                ${formattedPayable}
-              </h3>
-              {couponCode && discountAmount > 0 && (
-                <p className="text-xs font-semibold text-emerald-600 mt-1.5">
-                  Coupon {couponCode} applied (-${discountAmount.toFixed(2)})
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-3 pt-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-medium">Product Type</span>
-                <span className="text-slate-800 font-bold">Digital Assets</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500 font-medium">Delivery</span>
-                <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
-                  Instant (Email)
-                </span>
-              </div>
+          {/* Total Payment Due Header */}
+          <div className="text-center space-y-2.5">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.14em]">
+              TOTAL PAYMENT DUE
+            </p>
+            <h3 className="text-5xl font-black text-slate-950 tracking-tight font-mono">
+              ${formatMoney(payableTotal)}
+            </h3>
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-xs font-semibold shadow-2xs">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Secure Payment via PayPal</span>
             </div>
           </div>
 
-          <div className="space-y-3">
+          {/* Selected Payment Method Card (PayPal) */}
+          <div className="rounded-2xl border-2 border-blue-500 bg-white/90 px-4 py-3.5 shadow-xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative w-16 h-6 shrink-0">
+                <Image
+                  src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg"
+                  alt="PayPal"
+                  fill
+                  className="object-contain object-left"
+                />
+              </div>
+              <div className="h-6 w-px bg-slate-200 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-900 leading-tight">PayPal</p>
+                <p className="text-xs text-slate-500 truncate">
+                  Pay securely with your PayPal account
+                </p>
+              </div>
+            </div>
+            <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-2xs">
+              ✓
+            </span>
+          </div>
+
+          {/* Collapsible Order Summary Card */}
+          <div className="rounded-2xl border border-slate-200/90 bg-white/85 backdrop-blur-md shadow-2xs overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setIsSummaryOpen((prev) => !prev)}
+              className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
+            >
+              <span className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                <FileText className="w-4 h-4 text-slate-700" />
+                <span>Order Summary</span>
+              </span>
+              {isSummaryOpen ? (
+                <ChevronUp className="w-4 h-4 text-slate-500" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-slate-500" />
+              )}
+            </button>
+
+            {isSummaryOpen && (
+              <div className="px-4 pb-4 pt-1 space-y-2.5 border-t border-slate-100 text-sm">
+                <div className="flex items-center justify-between text-slate-600 pt-1.5">
+                  <span className="truncate pr-3">{summaryLabel}</span>
+                  <span className="font-semibold text-slate-800 font-mono">
+                    ${formatMoney(subtotal)}
+                  </span>
+                </div>
+
+                {couponCode && discountAmount > 0 && (
+                  <div className="flex items-center justify-between text-emerald-600 font-medium">
+                    <span>Coupon Discount ({couponCode})</span>
+                    <span className="font-mono">-${formatMoney(discountAmount)}</span>
+                  </div>
+                )}
+
+                <div className="border-t border-slate-200/80 pt-2.5 flex items-center justify-between font-bold text-slate-900">
+                  <span>Subtotal</span>
+                  <span className="font-mono">${formatMoney(payableTotal)}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-0.5">
+                  <span className="text-slate-500">Support &amp; Updates</span>
+                  <span className="font-semibold text-indigo-600">
+                    {hasSupportIncluded ? 'Included' : 'Dashboard Access'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* PayPal Trigger Button (Unchanged Flow & Action) */}
+          <div className="space-y-3.5 pt-0.5">
             <button
               type="button"
               onClick={handlePayPalCheckout}
@@ -225,13 +304,28 @@ export default function CheckoutModal({
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full text-slate-400 hover:text-slate-700 font-bold py-3 text-xs uppercase tracking-wider transition-colors cursor-pointer"
-            >
-              Return to Cart
-            </button>
+            {/* Security Divider & Back to Cart */}
+            <div className="flex items-center gap-3 text-xs text-slate-400">
+              <div className="h-px flex-1 bg-slate-200" />
+              <span>or</span>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
+              <Lock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <span>Your payment is secure and encrypted</span>
+            </div>
+
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Cart</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
