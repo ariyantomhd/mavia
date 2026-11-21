@@ -124,17 +124,30 @@ export function DownloadsTab({ orders = [] }: DownloadsTabProps) {
         data: { download_url: string; file_name: string; license_key: string };
       }>(`/licenses/${item.id}/download`);
 
-      if (res?.success && res.data?.download_url) {
+      if (!res?.success || !res.data?.download_url) {
+        throw new Error(res?.message || 'Download link is currently unavailable.');
+      }
+
+      const fileName = res.data.file_name || 'product.zip';
+
+      try {
+        const fileRes = await fetch(res.data.download_url);
+        if (!fileRes.ok) {
+          throw new Error('Failed to stream archive file.');
+        }
+
+        const blob = await fileRes.blob();
+        const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = res.data.download_url;
-        link.setAttribute('download', res.data.file_name || 'product.zip');
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
+        link.href = blobUrl;
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-      } else {
-        throw new Error(res?.message || 'Download link is currently unavailable.');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      } catch {
+        // Fallback tanpa target="_blank" agar tidak membuka tab baru dengan URL Supabase
+        window.location.assign(res.data.download_url);
       }
     } catch (err: unknown) {
       const message =
@@ -246,7 +259,7 @@ export function DownloadsTab({ orders = [] }: DownloadsTabProps) {
                     {isDownloading ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Preparing ZIP...</span>
+                        <span>Downloading ZIP...</span>
                       </>
                     ) : (
                       <>
